@@ -1,0 +1,100 @@
+{
+    "version": "2.0.0",
+    "command": "make",
+    "tasks": [
+        {
+            "options": {
+                "cwd": "${workspaceRoot}/threads"
+            },
+            "label": "Make Threads",
+            "args": [
+                "all"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "options": {
+                "cwd": "${workspaceRoot}/userprog"
+            },
+            "label": "Make Userprog",
+            "args": [
+                "all"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "options": {
+                "cwd": "${workspaceRoot}/vm"
+            },
+            "label": "Make VM",
+            "args": [
+                "all"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "options": {
+                "cwd": "${workspaceRoot}/filesys"
+            },
+            "label": "Make Filesys",
+            "args": [
+                "all"
+            ],
+            "problemMatcher": {
+                "owner": "cpp",
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            }
+        },
+        {
+            "type": "shell",
+            "label": "gcc build active file",
+            "command": "/usr/bin/gcc",
+            "args": [
+                "-g",
+                "${file}",
+                "-o",
+                "${fileDirname}/${fileBasenameNoExtension}"
+            ],
+            "options": {
+                "cwd": "/usr/bin"
+            }
+        }
+    ]
+}
