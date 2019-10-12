@@ -325,11 +325,22 @@ void thread_exit(void)
 void thread_yield(void)
 {
   struct thread *cur = thread_current();
+  struct list_elem *e;
   enum intr_level old_level;
 
   ASSERT(!intr_context());
 
   old_level = intr_disable();
+
+  /*for (e = list_begin(&waiting_list); e != list_end(&waiting_list); e = list_next(e))
+  {
+    struct blocked_thread *t = list_entry(e, struct blocked_thread, elem);
+    if(timer_elapsed(t->thread->block_time) > t->waitTime)
+    {
+      thread_unblock(t->thread->tid);
+    }
+  }*/
+
   if (cur != idle_thread)
     list_push_back(&ready_list, &cur->elem);
   cur->status = THREAD_READY;
