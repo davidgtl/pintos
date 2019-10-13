@@ -28,6 +28,8 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+static struct list waiting_list;
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -92,6 +94,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&waiting_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -219,12 +222,29 @@ thread_create (const char *name, int priority,
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
 void
-thread_block (void) 
+thread_block (int64_t ticks) 
 {
+
+  struct thread *cur = thread_current ();
+  printf("status cur %d \n ", cur->status);
+  enum intr_level old_level;
+  ASSERT (is_thread (thread_current()));
+
+  old_level = intr_disable ();
+  
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
 
+  thread_current () -> block_time = timer_ticks () + ticks;
+
+  
+
   thread_current ()->status = THREAD_BLOCKED;
+
+  cur->status = THREAD_BLOCKED;
+
+  list_push_back (&waiting_list, &cur->waitingelem);
+  
   schedule ();
 }
 
@@ -246,6 +266,8 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
+
+ 
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -316,7 +338,25 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+    {
+      list_push_back (&ready_list, &cur->elem);
+     
+    }
+
+   for (struct list_elem* e = list_rbegin (&waiting_list); e != list_rend (&waiting_list);e = list_prev (e))
+           {
+                struct thread *thr = list_entry (e, struct thread, waitingelem);
+                if (thr->block_time <= timer_ticks())
+                {
+                  list_remove(e);
+                  
+                  printf("status %d \n", thr->status);
+                  
+                  thread_unblock(thr);
+
+                  
+                }
+           }  
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -404,7 +444,7 @@ idle (void *idle_started_ UNUSED)
     {
       /* Let someone else run. */
       intr_disable ();
-      thread_block ();
+      thread_block (0);
 
       /* Re-enable interrupts and wait for the next one.
 

@@ -80,6 +80,7 @@ timer_ticks (void)
    should be a value once returned by timer_ticks(). */
 int64_t
 timer_elapsed (int64_t then) 
+
 {
   return timer_ticks () - then;
 }
@@ -91,9 +92,9 @@ timer_sleep (int64_t ticks)
 {
   int64_t start = timer_ticks ();
 
-  ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  ASSERT (intr_get_level () == INTR_ON);  
+  thread_block (ticks);
+  //thread_yield();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
