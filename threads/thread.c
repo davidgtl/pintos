@@ -182,9 +182,9 @@ tid_t thread_create(const char *name, int priority,
   enum intr_level old_level;
 
   ASSERT(function != NULL);
-  struct list_elem *
-      /* Allocate thread. */
-      t = palloc_get_page(PAL_ZERO);
+
+  /* Allocate thread. */
+  t = palloc_get_page(PAL_ZERO);
   if (t == NULL)
     return TID_ERROR;
 
