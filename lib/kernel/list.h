@@ -142,6 +142,7 @@ void list_splice (struct list_elem *before,
                   struct list_elem *first, struct list_elem *last);
 void list_push_front (struct list *, struct list_elem *);
 void list_push_back (struct list *, struct list_elem *);
+void list_remove_all(struct list_elem *, struct list *);
 
 /* List removal. */
 struct list_elem *list_remove (struct list_elem *);

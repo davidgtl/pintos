@@ -38,6 +38,7 @@ static struct test tests[] =
     {"mlfqs-nice-2", test_mlfqs_nice_2},
     {"mlfqs-nice-10", test_mlfqs_nice_10},
     {"mlfqs-block", test_mlfqs_block},
+    {"my_test_create_threads", my_test_create_threads},
   };
 
 static const char *test_name;
@@ -132,6 +133,9 @@ run_test (const char *name)
 
   tests[26].name = "mlfqs-block";
   tests[26].function = test_mlfqs_block;
+
+  tests[27].name = "my_test_create_threads";
+  tests[27].function = my_test_create_threads;
 
   // END - added at UTCN (2018)
 
