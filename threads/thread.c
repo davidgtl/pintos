@@ -365,7 +365,7 @@ struct thread *get_max_priority(struct list *threads)
 {
   struct list_elem *e = list_begin(threads);
 
-  struct thread *max = list_begin(threads);
+  struct thread *max = list_entry(e, struct thread, sema_elem);
 
   for (e = list_next(e); e != list_end(threads); e = list_next(e))
   {
@@ -393,6 +393,35 @@ void thread_priority_donate(struct thread *master, struct thread *slave)
   if (slave->slave != NULL)
   {
     thread_priority_donate(slave, slave->slave);
+  }
+}
+
+void find_max_master()
+{
+  struct list_elem *e;
+
+  struct thread *max = NULL;
+
+  for (e = list_begin(&waiting_list); e != list_end(&waiting_list); e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, elem);
+
+    if (t->slave == thread_current())
+    {
+      if (max == NULL || max->effective_priority < t->effective_priority)
+      {
+        max = t;
+      }
+    }
+  }
+
+  if (max != NULL)
+  {
+    thread_current()->effective_priority = max->effective_priority;
+  }
+  else
+  {
+    thread_current()->effective_priority = thread_current()->real_priority;
   }
 }
 
@@ -516,7 +545,8 @@ init_thread(struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy(t->name, name, sizeof t->name);
   t->stack = (uint8_t *)t + PGSIZE;
-  t->priority = priority;
+  t->real_priority = priority;
+  t->effective_priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back(&all_list, &t->allelem);
 }
@@ -545,7 +575,23 @@ next_thread_to_run(void)
   if (list_empty(&ready_list))
     return idle_thread;
   else
-    return list_entry(list_pop_front(&ready_list), struct thread, elem);
+  {
+    struct list_elem *e = list_begin(&ready_list);
+
+    struct thread *max = list_entry(e, struct thread, elem);
+
+    for (e = list_next(e); e != list_end(&ready_list); e = list_next(e))
+    {
+      struct thread *t = list_entry(e, struct thread, elem);
+
+      if (t->effective_priority > max->effective_priority)
+      {
+        max = t;
+      }
+    }
+
+    return max;
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page

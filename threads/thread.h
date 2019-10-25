@@ -148,6 +148,7 @@ struct thread *get_max_priority(struct list *);
 int thread_get_priority (void);
 void thread_set_priority (int);
 
+void thread_priority_donate(struct thread *, struct thread *);
 
 int thread_get_nice (void);
 void thread_set_nice (int);

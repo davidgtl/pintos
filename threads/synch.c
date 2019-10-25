@@ -187,7 +187,7 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
-  sema_init (&lock->semaphore, 1);
+  list_init (&lock->waiters);
 }
 
 /* Acquires LOCK, sleeping until it becomes available if
@@ -205,8 +205,19 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
-  sema_down (&lock->semaphore);
-  lock->holder = thread_current ();
+  enum intr_level old_level;
+  old_level = intr_disable ();
+  while (lock->holder != NULL) 
+    {
+      list_push_back (&lock->waiters, &thread_current ()->lock_elem);
+      thread_priority_donate(thread_current(),lock->holder);
+      intr_set_level (old_level);
+      thread_block ();
+      old_level = intr_disable ();
+    }
+  
+  lock->holder=thread_current();
+  intr_set_level (old_level);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -218,7 +229,7 @@ lock_acquire (struct lock *lock)
 bool
 lock_try_acquire (struct lock *lock)
 {
-  bool success;
+  /*bool success;
 
   ASSERT (lock != NULL);
   ASSERT (!lock_held_by_current_thread (lock));
@@ -226,7 +237,8 @@ lock_try_acquire (struct lock *lock)
   success = sema_try_down (&lock->semaphore);
   if (success)
     lock->holder = thread_current ();
-  return success;
+  return success;*/
+  return true;
 }
 
 /* Releases LOCK, which must be owned by the current thread.
@@ -239,9 +251,22 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
+  enum intr_level old_level;
 
+  old_level = intr_disable ();
+  if (!list_empty (&lock->waiters))
+  {
+    struct thread *t = get_max_priority(&lock->waiters);
+    list_remove_all(&t->lock_elem,&lock->waiters);
+    thread_unblock(t);
+
+    /*thread_unblock (list_entry (list_pop_front (&sema->waiters),
+                                struct thread, sema_elem));*/
+  }
+  find_max_master();
   lock->holder = NULL;
-  sema_up (&lock->semaphore);
+  intr_set_level (old_level);
+  thread_yield();
 }
 
 /* Returns true if the current thread holds LOCK, false
