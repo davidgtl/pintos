@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -28,7 +29,7 @@ static struct list ready_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
-static struct list waiting_list;
+static struct list waiting_list; //lista pentru thread-urile care asteapta sa expire timpul
 
 /* Idle thread. */
 static struct thread *idle_thread;
@@ -37,7 +38,7 @@ static struct thread *idle_thread;
 static struct thread *initial_thread;
 
 /* Lock used by allocate_tid(). */
-static struct lock tid_lock;
+static struct lock tid_lock; 
 
 /* Stack frame for kernel_thread(). */
 struct kernel_thread_frame 
@@ -127,6 +128,8 @@ thread_tick (void)
 {
   struct thread *t = thread_current ();
 
+
+
   /* Update statistics. */
   if (t == idle_thread)
     idle_ticks++;
@@ -140,6 +143,23 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
+     enum intr_level old_level = intr_disable ();
+ for (struct list_elem* e = list_rbegin (&waiting_list); e != list_rend (&waiting_list);e = list_prev (e))
+           {
+                struct thread *thr = list_entry (e, struct thread, waitingelem);
+                if (thr->wakeup_time == timer_ticks())
+                {
+                  list_remove(e);
+                  
+               
+                  
+                  thread_unblock(thr);
+
+                  
+                }
+           }  
+ intr_set_level (old_level);
 }
 
 /* Prints thread statistics. */
@@ -225,27 +245,23 @@ void
 thread_block (int64_t ticks) 
 {
 
-  struct thread *cur = thread_current ();
-  printf("status cur %d \n ", cur->status);
-  enum intr_level old_level;
-  ASSERT (is_thread (thread_current()));
-
-  old_level = intr_disable ();
-  
   ASSERT (!intr_context ());
   ASSERT (intr_get_level () == INTR_OFF);
-
-  thread_current () -> block_time = timer_ticks () + ticks;
-
+  struct thread *cur = thread_current ();
   
-
-  thread_current ()->status = THREAD_BLOCKED;
-
-  cur->status = THREAD_BLOCKED;
-
-  list_push_back (&waiting_list, &cur->waitingelem);
-  
+   if(ticks!=0)
+  {
+   // printf("Thread %s was blocked /until %lu and was added to waiting_list\n",cur->name, cur->wakeup_time); 
+    
+    cur-> wakeup_time = timer_ticks () + ticks;  
+    thread_current ()->status = THREAD_BLOCKED; 
+    list_push_back (&waiting_list, &cur->waitingelem);
+      
+  }
+  else
+  thread_current ()->status = THREAD_BLOCKED; 
   schedule ();
+
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -331,32 +347,14 @@ thread_exit (void)
 void
 thread_yield (void) 
 {
-  struct thread *cur = thread_current ();
+   struct thread *cur = thread_current ();
   enum intr_level old_level;
   
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    {
-      list_push_back (&ready_list, &cur->elem);
-     
-    }
-
-   for (struct list_elem* e = list_rbegin (&waiting_list); e != list_rend (&waiting_list);e = list_prev (e))
-           {
-                struct thread *thr = list_entry (e, struct thread, waitingelem);
-                if (thr->block_time <= timer_ticks())
-                {
-                  list_remove(e);
-                  
-                  printf("status %d \n", thr->status);
-                  
-                  thread_unblock(thr);
-
-                  
-                }
-           }  
+    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
