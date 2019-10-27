@@ -727,7 +727,7 @@ schedule(void)
   ASSERT(cur->status != THREAD_RUNNING);
   ASSERT(is_thread(next));
 
-  list_remove(&cur->elem);
+  list_remove(&next->elem);
   if (cur != next)
     prev = switch_threads(cur, next);
   //msg("Previous: %d, Current: %d, Next: %d", prev->tid, cur-> tid, next->tid);

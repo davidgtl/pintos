@@ -251,12 +251,14 @@ void lock_release(struct lock *lock)
   old_level = intr_disable();
   if (!list_empty(&lock->waiters))
   {
-    /*struct thread *t = get_max_priority_lock_elem(&lock->waiters);
+    struct thread *t = get_max_priority_lock_elem(&lock->waiters);
     
-    thread_unblock(t);*/
+    list_remove(&t->lock_elem);
 
-    thread_unblock(list_entry(list_pop_front(&lock->waiters),
-                              struct thread, lock_elem));
+    thread_unblock(t);
+
+    /*thread_unblock(list_entry(list_pop_front(&lock->waiters),
+                              struct thread, lock_elem));*/
   }
   find_max_master();
   lock->holder = NULL;
