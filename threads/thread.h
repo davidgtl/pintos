@@ -144,7 +144,9 @@ typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
 void thread_foreach_ready (thread_action_func *, void *);
 
-struct thread *get_max_priority(struct list *);
+struct thread *get_max_priority_sema_elem(struct list *);
+struct thread *get_max_priority_lock_elem(struct list *);
+struct thread *get_max_priority_cvar_elem(struct list *);
 int thread_get_priority (void);
 void thread_set_priority (int);
 

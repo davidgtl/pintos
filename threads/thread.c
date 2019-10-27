@@ -138,7 +138,7 @@ void thread_tick(void)
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
-    intr_yield_on_return ();
+    intr_yield_on_return();
 }
 
 /* Prints thread statistics. */
@@ -207,10 +207,11 @@ tid_t thread_create(const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
-  intr_set_level(old_level);
-
   /* Add to run queue. */
-  thread_unblock(t);
+  list_push_back(&ready_list, &t->elem);
+  t->status = THREAD_READY;
+
+  intr_set_level(old_level);
 
   printf("NAME: -- %s -- TID: -- %d --\n", name, tid);
 
@@ -226,14 +227,24 @@ tid_t thread_create(const char *name, int priority,
 void thread_block(void)
 {
   ASSERT(!intr_context());
-  ASSERT(intr_get_level() == INTR_OFF);
+  //ASSERT(intr_get_level() == INTR_OFF);
 
-  thread_current()->status = THREAD_BLOCKED;
+  enum intr_level old_level;
+  bool iFlag = false;
+  if (intr_get_level() != INTR_OFF)
+  {
+    old_level = intr_disable();
+    iFlag = true;
+  }
 
   list_remove(&thread_current()->elem);
-
   list_push_back(&waiting_list, &thread_current()->elem);
+  thread_current()->status = THREAD_BLOCKED;
+
   schedule();
+
+  if (iFlag)
+    intr_set_level(old_level);
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -252,7 +263,9 @@ void thread_unblock(struct thread *t)
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
+
   list_remove(&t->elem);
+
   list_push_back(&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level(old_level);
@@ -314,6 +327,18 @@ void thread_exit(void)
   NOT_REACHED();
 }
 
+bool list_constains(struct list *l, struct thread *toFind)
+{
+  struct list_elem *e;
+  for (e = list_begin(l); e != list_end(l); e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, elem);
+    if (&t->elem == &toFind->elem)
+      return true;
+  }
+  return false;
+}
+
 /* Yields the CPU.  The current thread is not put to sleep and
    may be scheduled again immediately at the scheduler's whim. */
 void thread_yield(void)
@@ -325,7 +350,10 @@ void thread_yield(void)
 
   old_level = intr_disable();
   if (cur != idle_thread)
-    list_push_back(&ready_list, &cur->elem);
+  {
+    if (!list_constains(&ready_list, cur))
+      list_push_back(&ready_list, &cur->elem);
+  }
   cur->status = THREAD_READY;
   schedule();
   intr_set_level(old_level);
@@ -360,18 +388,60 @@ void thread_foreach_ready(thread_action_func *func, void *aux)
     func(t, aux);
   }
 }
-
-struct thread *get_max_priority(struct list *threads)
+/*    struct list_elem elem;              
+    struct list_elem sema_elem;
+    struct list_elem lock_elem;
+    struct list_elem cvar_elem;*/
+struct thread *get_max_priority_sema_elem(struct list *threads)
 {
   struct list_elem *e = list_begin(threads);
 
-  struct thread *max = list_entry(e, struct thread, sema_elem);
+  struct thread *max = NULL;
 
   for (e = list_next(e); e != list_end(threads); e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, sema_elem);
 
-    if (t->effective_priority > max->effective_priority)
+    if (t->effective_priority > max->effective_priority || max == NULL)
+    {
+      max = t;
+    }
+  }
+
+  return max;
+}
+
+struct thread *get_max_priority_lock_elem(struct list *threads)
+{
+  struct list_elem *e = list_begin(threads);
+
+  struct thread *max = NULL;
+
+  for (e = list_next(e); e != list_end(threads); e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, lock_elem);
+
+    if (t->effective_priority > max->effective_priority || max == NULL)
+    {
+      max = t;
+    }
+  }
+
+  return max;
+}
+
+
+struct thread *get_max_priority_cvar_elem(struct list *threads)
+{
+  struct list_elem *e = list_begin(threads);
+
+  struct thread *max = NULL;
+
+  for (e = list_next(e); e != list_end(threads); e = list_next(e))
+  {
+    struct thread *t = list_entry(e, struct thread, cvar_elem);
+
+    if (t->effective_priority > max->effective_priority || max == NULL)
     {
       max = t;
     }
@@ -657,6 +727,7 @@ schedule(void)
   ASSERT(cur->status != THREAD_RUNNING);
   ASSERT(is_thread(next));
 
+  list_remove(&cur->elem);
   if (cur != next)
     prev = switch_threads(cur, next);
   //msg("Previous: %d, Current: %d, Next: %d", prev->tid, cur-> tid, next->tid);
