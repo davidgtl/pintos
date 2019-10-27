@@ -250,23 +250,6 @@ list_remove(struct list_elem *elem)
   return elem->next;
 }
 
-void list_remove_all(struct list_elem *elem, struct list *l)
-{
-  //TODO check if stupid
-  if (list_begin(l) == elem)
-  {
-    list_pop_front(l);
-  }
-  else if (list_end(l) == elem)
-  {
-    list_pop_back(l);
-  }
-  else
-  {
-    list_remove(elem);
-  }
-}
-
 /* Removes the front element from LIST and returns it.
    Undefined behavior if LIST is empty before removal. */
 struct list_elem *

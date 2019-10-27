@@ -257,7 +257,7 @@ lock_release (struct lock *lock)
   if (!list_empty (&lock->waiters))
   {
     struct thread *t = get_max_priority(&lock->waiters);
-    list_remove_all(&t->lock_elem,&lock->waiters);
+    list_remove(&t->lock_elem);
     thread_unblock(t);
 
     /*thread_unblock (list_entry (list_pop_front (&sema->waiters),

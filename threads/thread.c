@@ -230,7 +230,7 @@ void thread_block(void)
 
   thread_current()->status = THREAD_BLOCKED;
 
-  list_remove_all(&thread_current()->elem, &ready_list);
+  list_remove(&thread_current()->elem);
 
   list_push_back(&waiting_list, &thread_current()->elem);
   schedule();
@@ -252,7 +252,7 @@ void thread_unblock(struct thread *t)
 
   old_level = intr_disable();
   ASSERT(t->status == THREAD_BLOCKED);
-  list_remove_all(&t->elem, &waiting_list);
+  list_remove(&t->elem);
   list_push_back(&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level(old_level);
