@@ -32,6 +32,8 @@ static struct list waiting_list;
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
 
+static struct list waiting_list; //lista pentru thread-urile care asteapta sa expire timpul
+
 /* Idle thread. */
 static struct thread *idle_thread;
 
@@ -39,7 +41,7 @@ static struct thread *idle_thread;
 static struct thread *initial_thread;
 
 /* Lock used by allocate_tid(). */
-static struct lock tid_lock;
+static struct lock tid_lock; 
 
 /* Stack frame for kernel_thread(). */
 struct blocked_thread
@@ -134,6 +136,8 @@ void thread_tick(void)
 {
   struct thread *t = thread_current();
 
+
+
   /* Update statistics. */
   if (t == idle_thread)
     idle_ticks++;
@@ -146,7 +150,24 @@ void thread_tick(void)
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
-    intr_yield_on_return();
+    intr_yield_on_return ();
+
+     enum intr_level old_level = intr_disable ();
+ for (struct list_elem* e = list_rbegin (&waiting_list); e != list_rend (&waiting_list);e = list_prev (e))
+           {
+                struct thread *thr = list_entry (e, struct thread, waitingelem);
+                if (thr->wakeup_time == timer_ticks())
+                {
+                  list_remove(e);
+                  
+               
+                  
+                  thread_unblock(thr);
+
+                  
+                }
+           }  
+ intr_set_level (old_level);
 }
 
 /* Prints thread statistics. */
@@ -226,22 +247,27 @@ tid_t thread_create(const char *name, int priority,
    This function must be called with interrupts turned off.  It
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
-void thread_block(int64_t blockedTime)
+void
+thread_block (int64_t ticks) 
 {
-  ASSERT(!intr_context());
-  ASSERT(intr_get_level() == INTR_OFF);
 
-  thread_current()->status = THREAD_BLOCKED;
-  thread_current()->block_time = timer_ticks();
+  ASSERT (!intr_context ());
+  ASSERT (intr_get_level () == INTR_OFF);
+  struct thread *cur = thread_current ();
+  
+   if(ticks!=0)
+  {
+   // printf("Thread %s was blocked /until %lu and was added to waiting_list\n",cur->name, cur->wakeup_time); 
+    
+    cur-> wakeup_time = timer_ticks () + ticks;  
+    thread_current ()->status = THREAD_BLOCKED; 
+    list_push_back (&waiting_list, &cur->waitingelem);
+      
+  }
+  else
+  thread_current ()->status = THREAD_BLOCKED; 
+  schedule ();
 
-  struct blocked_thread *t;
-
-  t->thread = thread_current();
-  t->waitTime = blockedTime;
-
-  list_insert(&waiting_list, &t->elem);
-
-  schedule();
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -258,10 +284,11 @@ void thread_unblock(struct thread *t)
 
   ASSERT(is_thread(t));
 
-  old_level = intr_disable();
-  ASSERT(t->status == THREAD_BLOCKED);
-  list_remove(&t->waitelem);
-  list_push_back(&ready_list, &t->elem);
+  old_level = intr_disable ();
+  ASSERT (t->status == THREAD_BLOCKED);
+  list_push_back (&ready_list, &t->elem);
+
+ 
   t->status = THREAD_READY;
   intr_set_level(old_level);
 }
@@ -324,8 +351,7 @@ void thread_exit(void)
    may be scheduled again immediately at the scheduler's whim. */
 void thread_yield(void)
 {
-  struct thread *cur = thread_current();
-  struct list_elem *e;
+   struct thread *cur = thread_current ();
   enum intr_level old_level;
 
   ASSERT(!intr_context());
@@ -419,11 +445,11 @@ idle(void *idle_started_ UNUSED)
   idle_thread = thread_current();
   sema_up(idle_started);
 
-  for (;;)
-  {
-    /* Let someone else run. */
-    intr_disable();
-    thread_block(0);
+  for (;;) 
+    {
+      /* Let someone else run. */
+      intr_disable ();
+      thread_block (0);
 
     /* Re-enable interrupts and wait for the next one.
 

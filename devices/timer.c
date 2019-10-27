@@ -77,27 +77,27 @@ timer_ticks(void)
 /* Returns the number of timer ticks elapsed since THEN, which
    should be a value once returned by timer_ticks(). */
 int64_t
-timer_elapsed(int64_t then)
+timer_elapsed (int64_t then) 
+
 {
   return timer_ticks() - then;
 }
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
-void timer_sleep(int64_t ticks)
-{
-  int64_t start = timer_ticks();
+void
+timer_sleep (int64_t ticks) 
+{ 
 
-  ASSERT(intr_get_level() == INTR_ON);
+  enum intr_level old_level = intr_disable ();  
 
-  enum intr_level old_level;
-  old_level = intr_disable();
+  if(ticks>0)
+    thread_block (ticks);
+  intr_set_level (old_level);
+ 
+  ASSERT (intr_get_level () == INTR_ON);  
 
-  thread_block(ticks);
 
-  intr_set_level(old_level);
-  //while (timer_elapsed (start) < ticks)
-  //thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
