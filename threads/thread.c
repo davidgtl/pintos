@@ -394,15 +394,15 @@ void thread_foreach_ready(thread_action_func *func, void *aux)
     struct list_elem cvar_elem;*/
 struct thread *get_max_priority_sema_elem(struct list *threads)
 {
-  struct list_elem *e = list_begin(threads);
+  struct list_elem *e;
 
   struct thread *max = NULL;
 
-  for (e = list_next(e); e != list_end(threads); e = list_next(e))
+  for (e = list_begin(threads); e != list_end(threads); e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, sema_elem);
 
-    if (t->effective_priority > max->effective_priority || max == NULL)
+    if (max == NULL || max != NULL && t->effective_priority > max->effective_priority)
     {
       max = t;
     }
@@ -413,15 +413,15 @@ struct thread *get_max_priority_sema_elem(struct list *threads)
 
 struct thread *get_max_priority_lock_elem(struct list *threads)
 {
-  struct list_elem *e = list_begin(threads);
+  struct list_elem *e;
 
   struct thread *max = NULL;
 
-  for (e = list_next(e); e != list_end(threads); e = list_next(e))
+  for (e = list_begin(threads); e != list_end(threads); e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, lock_elem);
 
-    if (t->effective_priority > max->effective_priority || max == NULL)
+    if (max == NULL || max != NULL && t->effective_priority > max->effective_priority)
     {
       max = t;
     }
@@ -433,15 +433,15 @@ struct thread *get_max_priority_lock_elem(struct list *threads)
 
 struct thread *get_max_priority_cvar_elem(struct list *threads)
 {
-  struct list_elem *e = list_begin(threads);
+  struct list_elem *e;
 
   struct thread *max = NULL;
 
-  for (e = list_next(e); e != list_end(threads); e = list_next(e))
+  for (e = list_begin(threads); e != list_end(threads); e = list_next(e))
   {
     struct thread *t = list_entry(e, struct thread, cvar_elem);
 
-    if (t->effective_priority > max->effective_priority || max == NULL)
+    if (max == NULL || max != NULL && t->effective_priority > max->effective_priority)
     {
       max = t;
     }

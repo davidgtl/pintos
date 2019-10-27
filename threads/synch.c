@@ -114,14 +114,9 @@ void sema_up(struct semaphore *sema)
   old_level = intr_disable();
   if (!list_empty(&sema->waiters))
   {
-    /*struct thread *t = get_max_priority_sema_elem(&sema->waiters);
-
+    struct thread *t = get_max_priority_sema_elem(&sema->waiters);
     list_remove(&t->sema_elem);
-
-    thread_unblock(t);*/
-
-    thread_unblock(list_entry(list_pop_front(&sema->waiters),
-                              struct thread, sema_elem));
+    thread_unblock(t);
   }
   sema->value++;
   intr_set_level(old_level);
@@ -252,13 +247,9 @@ void lock_release(struct lock *lock)
   if (!list_empty(&lock->waiters))
   {
     struct thread *t = get_max_priority_lock_elem(&lock->waiters);
-    
     list_remove(&t->lock_elem);
-
     thread_unblock(t);
 
-    /*thread_unblock(list_entry(list_pop_front(&lock->waiters),
-                              struct thread, lock_elem));*/
   }
   find_max_master();
   lock->holder = NULL;
