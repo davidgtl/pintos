@@ -81,6 +81,7 @@ test_priority_fifo (void)
         printf ("\n");
       d->iterations++;
     }
+  timer_sleep(3000);
 }
 
 static void 
