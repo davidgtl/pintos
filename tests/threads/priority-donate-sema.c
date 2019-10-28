@@ -43,6 +43,7 @@ test_priority_donate_sema (void)
   thread_create ("med", PRI_DEFAULT + 3, m_thread_func, &ls);
   thread_create ("high", PRI_DEFAULT + 5, h_thread_func, &ls);
   sema_up (&ls.sema);
+  //timer_sleep(1000);
   msg ("Main thread finished.");
 }
 

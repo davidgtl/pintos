@@ -26,6 +26,8 @@ static struct list ready_list;
 
 static struct list waiting_list;
 
+static struct list sleeping_list;
+
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
 static struct list all_list;
@@ -94,7 +96,7 @@ void thread_init(void)
   list_init(&ready_list);
   list_init(&waiting_list);
   list_init(&all_list);
-
+  list_init(&sleeping_list);
   thread_no = 0;
 
   /* Set up a thread structure for the running thread. */
@@ -124,6 +126,28 @@ void thread_start(void)
    Thus, this function runs in an external interrupt context. */
 void thread_tick(void)
 {
+
+
+   enum intr_level old_level = intr_disable ();
+       for (struct list_elem* e = list_rbegin (&sleeping_list); e != list_rend (&sleeping_list);e = list_prev (e))
+           {
+                struct thread *thr = list_entry (e, struct thread, sleepingelem);
+                if (thr->wakeup_time == timer_ticks())
+                {
+                  
+                  
+                  list_remove(&thr->sleepingelem);
+                 // list_remove(&thr->elem);
+                  list_push_back(&ready_list, &thr->elem);
+                  thr->status = THREAD_READY;
+              
+                 
+                  
+                }
+                if (thr->wakeup_time < timer_ticks())
+                  break;
+           }  
+ intr_set_level (old_level);
   struct thread *t = thread_current();
 
   /* Update statistics. */
@@ -139,6 +163,9 @@ void thread_tick(void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return();
+
+
+        
 }
 
 /* Prints thread statistics. */
@@ -224,7 +251,18 @@ tid_t thread_create(const char *name, int priority,
    This function must be called with interrupts turned off.  It
    is usually a better idea to use one of the synchronization
    primitives in synch.h. */
-void thread_block(void)
+
+bool
+
+*thread_less_func(struct list_elem *a, struct list_elem *b, void *aux) {
+
+  return list_entry(a,struct thread,elem)->wakeup_time <
+
+         list_entry(b,struct thread,elem)->wakeup_time;
+
+}
+
+void thread_block(int64_t ticks)
 {
   ASSERT(!intr_context());
   //ASSERT(intr_get_level() == INTR_OFF);
@@ -238,13 +276,29 @@ void thread_block(void)
   }
 
   list_remove(&thread_current()->elem);
+  
+  if(ticks>0)
+  { 
+      thread_current()->wakeup_time=timer_ticks() +ticks;
+
+      list_insert_ordered(&sleeping_list, &thread_current()->sleepingelem, &thread_less_func, 0);
+  }
+ else
+ {
+
   list_push_back(&waiting_list, &thread_current()->elem);
+  thread_current()->wakeup_time=-1;
+ }
+ 
+  
+ 
   thread_current()->status = THREAD_BLOCKED;
 
   schedule();
 
   if (iFlag)
     intr_set_level(old_level);
+
 }
 
 /* Transitions a blocked thread T to the ready-to-run state.
@@ -457,7 +511,7 @@ void thread_set_priority(int new_priority)
 }
 
 void thread_priority_donate(struct thread *master, struct thread *slave)
-{
+{ 
   slave->effective_priority = master->effective_priority;
   master->slave = slave;
   if (slave->slave != NULL)
@@ -548,7 +602,7 @@ idle(void *idle_started_ UNUSED)
   {
     /* Let someone else run. */
     intr_disable();
-    thread_block();
+    thread_block(0);
 
     /* Re-enable interrupts and wait for the next one.
 
