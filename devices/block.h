@@ -41,10 +41,6 @@ enum block_type
 
 const char *block_type_name (enum block_type);
 
-// BEGIN - added by UTCN (Nov 6th, 2018)
-void blocks_init(void);
-// END - added by UTCN (Nov 6th, 2018)
-
 /* Finding block devices. */
 struct block *block_get_role (enum block_type);
 void block_set_role (enum block_type, struct block *);

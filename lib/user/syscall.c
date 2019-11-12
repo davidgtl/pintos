@@ -183,40 +183,10 @@ inumber (int fd)
   return syscall1 (SYS_INUMBER, fd);
 }
 
-/*
- * Added by Adrian Colesa - multithreading
- */
-int uthread_create(THREAD_FUNC th_fc, int* fc_arg)
+
+int
+syscall_test (int fd) 
 {
-	return syscall2 (SYS_UTHREAD_CREATE, th_fc, fc_arg);
+  return syscall1 (666, fd);
 }
 
-int uthread_join(int th_id, int* th_status)
-{
-	return syscall2 (SYS_UTHREAD_JOIN, th_id, th_status);
-}
-
-int uthread_joinall()
-{
-	return syscall0(SYS_UTHREAD_JOINALL);
-}
-
-void uthread_exit(int th_exit_code)
-{
-	syscall1 (SYS_UTHREAD_EXIT, th_exit_code);
-}
-
-int uthread_getpid()
-{
-	return syscall0 (SYS_UTHREAD_GETPID);
-}
-
-int uthread_gettid()
-{
-	return syscall0 (SYS_UTHREAD_GETTID);
-}
-
-void uthread_msleep( uint32_t s )
-{
-	syscall1( SYS_MSLEEP, s );
-}

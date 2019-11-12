@@ -24,6 +24,26 @@ typedef int tid_t;
 #define PRI_DEFAULT 31                  /* Default priority. */
 #define PRI_MAX 63                      /* Highest priority. */
 
+/* Added by Adrian Colesa */
+struct thread_statistics {
+	int tid;							// thread ID
+	int ready_begin;					// the moment the thread is inserted in ready queue
+	int ready_waiting_time;				// account for time the thread was in ready queue
+	int blocked_begin;					// the moment the thread is inserted in a waiting queue
+	int blocked_waiting_time;			// account for time the thread was in waiting queues (blocked)
+	int reaction_time;					// total reaction time
+	int no_waiting_time;				// the number of times the thread was waiting (blocked)
+	int last_reaction_time;				// measure the last reaction time
+	int max_reaction_time;				// measure the maximum reaction time
+	int running_begin;					// the moment the thread is given the processor
+	int running_time;					// account for time the thread was in running state
+	int execution_begin;				// the moment the thread starts its execution
+	int execution_time;					// total execution time measured by the wall clock
+
+	struct list_elem stats_elem;		// used to link all statistics together
+};
+
+
 /* A kernel thread or user process.
 
    Each thread structure is stored in its own 4 kB page.  The
@@ -84,26 +104,19 @@ struct thread
   {
     /* Owned by thread.c. */
     tid_t tid;                          /* Thread identifier. */
-    tid_t ptid;                         /* Parent.  */
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-    int real_priority;                       /* Priority. */
-    int effective_priority;
-    int64_t wakeup_time;
-    struct thread *slave;
+    int priority;                       /* Priority. */
 
-    struct list locks;
-    struct list cond_vars;
+    /* Added by Adrian Colesa */
+    struct thread_statistics *stats;	// record thread's statistics
+
 
     struct list_elem allelem;           /* List element for all threads list. */
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
-    struct list_elem sleepingelem;
-    struct list_elem sema_elem;
-    struct list_elem lock_elem;
-    struct list_elem cvar_elem;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -119,8 +132,6 @@ struct thread
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
 
-int thread_no;
-
 void thread_init (void);
 void thread_start (void);
 
@@ -130,7 +141,7 @@ void thread_print_stats (void);
 typedef void thread_func (void *aux);
 tid_t thread_create (const char *name, int priority, thread_func *, void *);
 
-void thread_block (int64_t ticks);
+void thread_block (void);
 void thread_unblock (struct thread *);
 
 struct thread *thread_current (void);
@@ -143,21 +154,22 @@ void thread_yield (void);
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
-void thread_foreach_ready (thread_action_func *, void *);
 
-struct thread *get_max_priority_sema_elem(struct list *);
-struct thread *get_max_priority_lock_elem(struct list *);
-struct thread *get_max_priority_cvar_elem(struct list *);
 int thread_get_priority (void);
 void thread_set_priority (int);
-
-void thread_priority_donate(struct thread *, struct thread *);
 
 int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+/* Adrian Colesa */
 char* thread_status(enum thread_status status);
+int thread_get_execution_time(int tid);
+int thread_get_running_time(int tid);
+int thread_get_ready_time(int tid);
+int thread_get_blocked_time(int tid);
+int thread_get_avg_reaction_time(int tid);
+int thread_get_max_reaction_time(int tid);
 
 #endif /* threads/thread.h */

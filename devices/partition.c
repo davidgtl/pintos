@@ -23,23 +23,11 @@ static void found_partition (struct block *, uint8_t type,
                              int part_nr);
 static const char *partition_type_name (uint8_t);
 
-// BEGIN - added UTCN (Nov 6th, 2018)
-static void partition_read (void *p_, block_sector_t sector, void *buffer);
-static void partition_write (void *p_, block_sector_t sector, const void *buffer);
-// END - added UTCN (Nov 6th, 2018) 
-
 /* Scans BLOCK for partitions of interest to Pintos. */
 void
 partition_scan (struct block *block)
 {
   int part_nr = 0;
-
-  // BEGIN - added UTCN (Nov 6th, 2018)
-  partition_operations.read = partition_read;
-  partition_operations.write = partition_write;
-  // END - added UTCN (Nov 6th, 2018) 
-  
-  
   read_partition_table (block, 0, 0, &part_nr);
   if (part_nr == 0)
     printf ("%s: Device contains no partitions\n", block_name (block));
@@ -306,111 +294,6 @@ partition_type_name (uint8_t type)
       [0xfe] = "LANstep",
       [0xff] = "BBT",
     };
-
-
-  // BEGIN - added UTCN (Nov 6th, 2018)
-   type_names[0x00] = "Empty";
-   type_names[0x01] = "FAT12";
-   type_names[0x02] = "XENIX root";
-   type_names[0x03] = "XENIX usr";
-      type_names[0x04] = "FAT16 <32M";
-      type_names[0x05] = "Extended";
-      type_names[0x06] = "FAT16";
-      type_names[0x07] = "HPFS/NTFS";
-      type_names[0x08] = "AIX";
-      type_names[0x09] = "AIX bootable";
-      type_names[0x0a] = "OS/2 Boot Manager";
-      type_names[0x0b] = "W95 FAT32";
-      type_names[0x0c] = "W95 FAT32 (LBA)";
-      type_names[0x0e] = "W95 FAT16 (LBA)";
-      type_names[0x0f] = "W95 Ext'd (LBA)";
-      type_names[0x10] = "OPUS";
-      type_names[0x11] = "Hidden FAT12";
-      type_names[0x12] = "Compaq diagnostics";
-      type_names[0x14] = "Hidden FAT16 <32M";
-      type_names[0x16] = "Hidden FAT16";
-      type_names[0x17] = "Hidden HPFS/NTFS";
-      type_names[0x18] = "AST SmartSleep";
-      type_names[0x1b] = "Hidden W95 FAT32";
-      type_names[0x1c] = "Hidden W95 FAT32 (LBA)";
-      type_names[0x1e] = "Hidden W95 FAT16 (LBA)";
-      type_names[0x20] = "Pintos OS kernel";
-      type_names[0x21] = "Pintos file system";
-      type_names[0x22] = "Pintos scratch";
-      type_names[0x23] = "Pintos swap";
-      type_names[0x24] = "NEC DOS";
-      type_names[0x39] = "Plan 9";
-      type_names[0x3c] = "PartitionMagic recovery";
-      type_names[0x40] = "Venix 80286";
-      type_names[0x41] = "PPC PReP Boot";
-      type_names[0x42] = "SFS";
-      type_names[0x4d] = "QNX4.x";
-      type_names[0x4e] = "QNX4.x 2nd part";
-      type_names[0x4f] = "QNX4.x 3rd part";
-      type_names[0x50] = "OnTrack DM";
-      type_names[0x51] = "OnTrack DM6 Aux1";
-      type_names[0x52] = "CP/M";
-      type_names[0x53] = "OnTrack DM6 Aux3";
-      type_names[0x54] = "OnTrackDM6";
-      type_names[0x55] = "EZ-Drive";
-      type_names[0x56] = "Golden Bow";
-      type_names[0x5c] = "Priam Edisk";
-      type_names[0x61] = "SpeedStor";
-      type_names[0x63] = "GNU HURD or SysV";
-      type_names[0x64] = "Novell Netware 286";
-      type_names[0x65] = "Novell Netware 386";
-      type_names[0x70] = "DiskSecure Multi-Boot";
-      type_names[0x75] = "PC/IX";
-      type_names[0x80] = "Old Minix";
-      type_names[0x81] = "Minix / old Linux";
-      type_names[0x82] = "Linux swap / Solaris";
-      type_names[0x83] = "Linux";
-      type_names[0x84] = "OS/2 hidden C: drive";
-      type_names[0x85] = "Linux extended";
-      type_names[0x86] = "NTFS volume set";
-      type_names[0x87] = "NTFS volume set";
-      type_names[0x88] = "Linux plaintext";
-      type_names[0x8e] = "Linux LVM";
-      type_names[0x93] = "Amoeba";
-      type_names[0x94] = "Amoeba BBT";
-      type_names[0x9f] = "BSD/OS";
-      type_names[0xa0] = "IBM Thinkpad hibernation";
-      type_names[0xa5] = "FreeBSD";
-      type_names[0xa6] = "OpenBSD";
-      type_names[0xa7] = "NeXTSTEP";
-      type_names[0xa8] = "Darwin UFS";
-      type_names[0xa9] = "NetBSD";
-      type_names[0xab] = "Darwin boot";
-      type_names[0xb7] = "BSDI fs";
-      type_names[0xb8] = "BSDI swap";
-      type_names[0xbb] = "Boot Wizard hidden";
-      type_names[0xbe] = "Solaris boot";
-      type_names[0xbf] = "Solaris";
-      type_names[0xc1] = "DRDOS/sec (FAT-12)";
-      type_names[0xc4] = "DRDOS/sec (FAT-16 < 32M)";
-      type_names[0xc6] = "DRDOS/sec (FAT-16)";
-      type_names[0xc7] = "Syrinx";
-      type_names[0xda] = "Non-FS data";
-      type_names[0xdb] = "CP/M / CTOS / ...";
-      type_names[0xde] = "Dell Utility";
-      type_names[0xdf] = "BootIt";
-      type_names[0xe1] = "DOS access";
-      type_names[0xe3] = "DOS R/O";
-      type_names[0xe4] = "SpeedStor";
-      type_names[0xeb] = "BeOS fs";
-      type_names[0xee] = "EFI GPT";
-      type_names[0xef] = "EFI (FAT-12/16/32)";
-      type_names[0xf0] = "Linux/PA-RISC boot";
-      type_names[0xf1] = "SpeedStor";
-      type_names[0xf4] = "SpeedStor";
-      type_names[0xf2] = "DOS secondary";
-      type_names[0xfd] = "Linux raid autodetect";
-      type_names[0xfe] = "LANstep";
-      type_names[0xff] = "BBT";
-
-  // END - added UTCN (Nov 6th, 2018) 
-  
-
 
   return type_names[type] != NULL ? type_names[type] : "Unknown";
 }

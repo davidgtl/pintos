@@ -90,10 +90,10 @@ main (void)
   thread_init ();
   console_init ();  
 
-  init_base_constants();
-
   /* Greet user. */
-  printf ("Pintos booting with %'"PRIu32" kB RAM...\n", init_ram_pages * PGSIZE / 1024);
+  // Changed by Adrian Colesa
+  printf ("Pintos booting with %'"PRIu32" kB RAM (i.e. %d pages of 4 kB)...\n",
+          init_ram_pages * PGSIZE / 1024, init_ram_pages);
 
   /* Initialize memory system. */
   palloc_init (user_page_limit);
@@ -168,8 +168,18 @@ paging_init (void)
     {
       uintptr_t paddr = page * PGSIZE;
       char *vaddr = ptov (paddr);
+
       size_t pde_idx = pd_no (vaddr);
       size_t pte_idx = pt_no (vaddr);
+
+      // Added by Adrian Colesa
+      if ((page>=0 && page<10) || ((page>=init_ram_pages - 10) && page<init_ram_pages)) {
+    	  printf("\nPhysical memory mapping. Physical page %d starting at physical address %x is mapped on the virtual page %d starting at virtual address %x", page, paddr, (unsigned int)vaddr/PGSIZE, vaddr);
+		  printf("\n                         Page directory entry = %d. Page table entry = %d", pde_idx, pte_idx);
+      } else {
+    	  printf(".");
+      }
+
       bool in_kernel_text = &_start <= vaddr && vaddr < &_end_kernel_text;
 
       if (pd[pde_idx] == 0)
@@ -307,7 +317,7 @@ run_actions (char **argv)
     };
 
   /* Table of supported actions. */
-  static struct action actions[] = 
+  static const struct action actions[] = 
     {
       {"run", 2, run_task},
 #ifdef FILESYS
@@ -320,40 +330,9 @@ run_actions (char **argv)
       {NULL, 0, NULL},
     };
 
-    // BEGIN - added at UTCN (2018)
-    //  due to not initializing (maybe linking problems) correctly "static const" structures (see above "static const struct action actions[]")
-    //  we changed them in non-constants and initialized explicitely
-    actions[0].name = "run";
-    actions[0].argc = 2;
-    actions[0].function = run_task;
-
-#ifdef FILESYS
-    actions[1].name = "ls";
-    actions[1].argc = 1;
-    actions[1].function = fsutil_ls;
-
-    actions[2].name = "cat";
-    actions[2].argc = 2;
-    actions[2].function = fsutil_cat;
-
-    actions[3].name = "rm";
-    actions[3].argc = 2;
-    actions[3].function = fsutil_rm;
-
-    actions[4].name = "extract";
-    actions[4].argc = 1;
-    actions[4].function = fsutil_extract;
-
-    actions[5].name = "append";
-    actions[5].argc = 2;
-    actions[5].function = fsutil_append;
-#endif
-
-    // END - added at UTCN (2018)
-
   while (*argv != NULL)
     {
-      struct action *a;
+      const struct action *a;
       int i;
 
       /* Find action name. */

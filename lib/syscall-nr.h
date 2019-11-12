@@ -1,8 +1,6 @@
 #ifndef __LIB_SYSCALL_NR_H
 #define __LIB_SYSCALL_NR_H
 
-#include <stdint.h>
-
 /* System call numbers. */
 enum 
   {
@@ -30,16 +28,7 @@ enum
     SYS_MKDIR,                  /* Create a directory. */
     SYS_READDIR,                /* Reads a directory entry. */
     SYS_ISDIR,                  /* Tests if a fd represents a directory. */
-    SYS_INUMBER,                /* Returns the inode number for a fd. */
-
-    /* Add by Adrian Colesa - multithreading */
-    SYS_UTHREAD_GETPID,			/* return the process id */
-    SYS_UTHREAD_GETTID,			/* return the thread id in a process */
-    SYS_UTHREAD_CREATE,			/* create a new thread in the process the calling thread belongs to */
-    SYS_UTHREAD_JOIN,			/* join a thread in the same process */
-    SYS_UTHREAD_JOINALL,
-    SYS_UTHREAD_EXIT,			/* exit e thread in a process */
-    SYS_MSLEEP
+    SYS_INUMBER                 /* Returns the inode number for a fd. */
   };
 
 #endif /* lib/syscall-nr.h */

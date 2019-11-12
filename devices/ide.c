@@ -97,30 +97,12 @@ static void select_device_wait (const struct ata_disk *);
 
 static void interrupt_handler (struct intr_frame *);
 
-// BEGIN - changed UTCN (Nov 6th, 2018)
-// moved here from below and commented
-// static struct block_operations ide_operations =
-//  {
-//   ide_read,
-//    ide_write
-//  };
-static void ide_read (void *d_, block_sector_t sec_no, void *buffer);
-static void ide_write (void *d_, block_sector_t sec_no, const void *buffer);
-// END - changed UTCN (Nov 6th, 2018)
- 
-
 /* Initialize the disk subsystem and detect disks. */
 void
 ide_init (void) 
 {
   size_t chan_no;
 
-  // BEGIN - changed UTCN (Nov 6th, 2018)
-   ide_operations.read = ide_read;
-   ide_operations.write = ide_write;
-   blocks_init();
-  // END - changed UTCN (Nov 6th, 2018)
- 
   for (chan_no = 0; chan_no < CHANNEL_CNT; chan_no++)
     {
       struct channel *c = &channels[chan_no];
@@ -394,6 +376,12 @@ ide_write (void *d_, block_sector_t sec_no, const void *buffer)
   lock_release (&c->lock);
 }
 
+static struct block_operations ide_operations =
+  {
+    ide_read,
+    ide_write
+  };
+
 /* Selects device D, waiting for it to become ready, and then
    writes SEC_NO to the disk's sector selection registers.  (We
    use LBA mode.) */

@@ -88,11 +88,10 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  // UTCN
+	// Added by Adrian Colesa
+	printf("Thread %s that started the testing program (and corresponding thread) waits after created process to finish its execution\n", thread_current()->name);
   while(1);
-
-  // orifinal
-  //return -1;
+	return -1;
 }
 
 /* Free the current process's resources. */
@@ -295,6 +294,14 @@ load (const char *file_name, void (**eip) (void), void **esp)
                   read_bytes = 0;
                   zero_bytes = ROUND_UP (page_offset + phdr.p_memsz, PGSIZE);
                 }
+
+              // Added by Adrian Colesa
+              if (!writable)
+            	  printf("[load] Loading CODE segment of %d bytes size starting from virtual memory 0x%x\n", read_bytes, phdr.p_vaddr);
+              else
+            	  printf("[load] Loading DATA segment of %d bytes size starting from virtual memory 0x%x\n", read_bytes, phdr.p_vaddr);
+
+
               if (!load_segment (file, file_page, (void *) mem_page,
                                  read_bytes, zero_bytes, writable))
                 goto done;
@@ -413,6 +420,9 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         }
       memset (kpage + page_read_bytes, 0, page_zero_bytes);
 
+      // Added by Adrian Colesa
+      printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
+
       /* Add the page to the process's address space. */
       if (!install_page (upage, kpage, writable)) 
         {
@@ -439,13 +449,15 @@ setup_stack (void **esp)
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
     {
+	  // Added by Adrian Colesa
+	  printf("[setup_stack] The stack virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", (((unsigned int) PHYS_BASE) - PGSIZE)/PGSIZE, (((uint8_t *) PHYS_BASE) - PGSIZE), (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
+
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success) {
-	// UTCN
-	*esp = PHYS_BASE - 12;
-        //original
-        //*esp = PHYS_BASE;
-      } else
+        
+        *esp = PHYS_BASE -12;
+      }
+      else
         palloc_free_page (kpage);
     }
   return success;

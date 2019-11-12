@@ -401,11 +401,9 @@ unexpected_interrupt (const struct intr_frame *f)
      unexpected interrupt the first time and fairly often after
      that, but one that occurs many times will not overwhelm the
      console. */
-  if ((n & (n - 1)) == 0){
-    debug_panic("inttr", 406, "unexpected_interrupt", "I'm broken, pls help.");
+  if ((n & (n - 1)) == 0)
     printf ("Unexpected interrupt %#04x (%s)\n",
     f->vec_no, intr_names[f->vec_no]);
-  }
 }
 
 /* Dumps interrupt frame F to the console, for debugging. */

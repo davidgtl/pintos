@@ -51,6 +51,11 @@ palloc_init (size_t user_page_limit)
   size_t free_pages = (free_end - free_start) / PGSIZE;
   size_t user_pages = free_pages / 2;
   size_t kernel_pages;
+
+  // Added by Adrian Colesa
+  printf("Number of free pages in physical memory is %d\n", free_pages);
+  printf("At most %x pages are reserved for user processes\n", user_page_limit);
+
   if (user_pages > user_page_limit)
     user_pages = user_page_limit;
   kernel_pages = free_pages - user_pages;

@@ -92,7 +92,7 @@ wait (struct intq *q UNUSED, struct thread **waiter)
           || (waiter == &q->not_full && intq_full (q)));
 
   *waiter = thread_current ();
-  thread_block (0);
+  thread_block ();
 }
 
 /* WAITER must be the address of Q's not_empty or not_full

@@ -13,8 +13,32 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED) 
+syscall_handler (struct intr_frame *f UNUSED)
 {
-  printf ("system call!\n");
-  thread_exit ();
+	printf ("system call kernel \n");
+
+	int nr = (int)((int*)f->esp)[0];
+	int _wfd,_wsize;
+	char* _wbuffer;
+	switch (nr)
+	{
+	case SYS_WRITE:
+			_wfd = (int)((int*)f->esp)[1];
+			_wbuffer = (char*)((int*)f->esp)[2];
+			_wsize = (int)((int*)f->esp)[2];
+			if(_wfd == 1){
+				printf(_wbuffer);
+			}
+			f->eax = _wsize;
+		break;
+	case 666:
+		printf("Hello from hello");
+		break;
+	
+	default:
+		break;
+	}
+
+
+	thread_exit ();
 }

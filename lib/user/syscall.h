@@ -32,6 +32,7 @@ int read (int fd, void *buffer, unsigned length);
 int write (int fd, const void *buffer, unsigned length);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
+int syscall_test (int fd);
 void close (int fd);
 
 /* Project 3 and optionally project 4. */
@@ -47,13 +48,8 @@ int inumber (int fd);
 
 // Added by Adrian Colesa - multithreading
 typedef int (*THREAD_FUNC)(int);
-int uthread_create(THREAD_FUNC, int*);
-int uthread_join(int, int*);
-int uthread_joinall(void);
-void uthread_exit(int);
-int uthread_getpid(void);
-int uthread_gettid(void);
-void uthread_msleep( uint32_t);
-
+int thread_create(THREAD_FUNC, int);
+int thread_join(int, int*);
+void thread_exit(int);
 
 #endif /* lib/user/syscall.h */
