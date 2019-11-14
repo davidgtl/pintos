@@ -32,7 +32,6 @@ int read (int fd, void *buffer, unsigned length);
 int write (int fd, const void *buffer, unsigned length);
 void seek (int fd, unsigned position);
 unsigned tell (int fd);
-int syscall_test (int fd);
 void close (int fd);
 
 /* Project 3 and optionally project 4. */

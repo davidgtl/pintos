@@ -90,7 +90,8 @@ process_wait (tid_t child_tid UNUSED)
 {
 	// Added by Adrian Colesa
 	printf("Thread %s that started the testing program (and corresponding thread) waits after created process to finish its execution\n", thread_current()->name);
-  while(1);
+	while (1);
+
 	return -1;
 }
 
@@ -443,19 +444,25 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 static bool
 setup_stack (void **esp) 
 {
-  uint8_t *kpage;
+  int PAGES = 1;
+  uint8_t *kpages[10], *kpage;
   bool success = false;
 
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  for(int i = 0 ; i < PAGES; i++)
+  {
+      kpages[i] = palloc_get_page (PAL_USER | PAL_ZERO);
+      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE * (i+1), kpages[i], true);
+  }
+  kpage = kpages[PAGES-1];
   if (kpage != NULL) 
     {
 	  // Added by Adrian Colesa
 	  printf("[setup_stack] The stack virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", (((unsigned int) PHYS_BASE) - PGSIZE)/PGSIZE, (((uint8_t *) PHYS_BASE) - PGSIZE), (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
 
-      success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+      //success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success) {
-        
-        *esp = PHYS_BASE -12;
+    	  // Changed by Adrian Colesa
+        *esp = PHYS_BASE - 12;
       }
       else
         palloc_free_page (kpage);

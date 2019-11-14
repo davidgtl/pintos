@@ -3,6 +3,7 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
 
@@ -13,32 +14,49 @@ syscall_init (void)
 }
 
 static void
-syscall_handler (struct intr_frame *f UNUSED)
+syscall_handler (struct intr_frame *f)
 {
-	printf ("system call kernel \n");
+	int syscall_no = ((int*)f->esp)[0];
+	int count;	
 
-	int nr = (int)((int*)f->esp)[0];
-	int _wfd,_wsize;
-	char* _wbuffer;
-	switch (nr)
-	{
-	case SYS_WRITE:
-			_wfd = (int)((int*)f->esp)[1];
-			_wbuffer = (char*)((int*)f->esp)[2];
-			_wsize = (int)((int*)f->esp)[2];
-			if(_wfd == 1){
-				printf(_wbuffer);
+	printf ("system call no %d!\n", syscall_no);
+
+	switch (syscall_no) {
+		case SYS_EXIT:
+			printf ("SYS_EXIT system call!\n");
+			thread_exit();
+			break;
+		case SYS_WRITE:
+			printf ("SYS_WRITE system call!\n");
+			f->eax=0;
+			return;
+		case 69:
+			count = 0;
+			for(unsigned int i = 0x00000000; i <= PHYS_BASE; i += PGSIZE){
+				if(is_user_vaddr(i)){
+					//printf("AAM: %d\n", pagedir_get_page (thread_current()->pagedir, i));
+					if(pagedir_get_page (thread_current()->pagedir, i) != NULL)
+						printf("%#010x \n", pagedir_get_page (thread_current()->pagedir, i));
+					count += pagedir_get_page (thread_current()->pagedir, i) != NULL;
+				}
 			}
-			f->eax = _wsize;
-		break;
-	case 666:
-		printf("Hello from hello");
-		break;
-	
-	default:
-		break;
+			printf("Ana are %d mere.\n", count);
+			f->eax = count;
+			return;
+		case 70:
+			count = 0;
+			for(unsigned int i = PHYS_BASE; i >= 0; i -= PGSIZE){
+				if(is_user_vaddr(i)){
+					if(pagedir_get_page (thread_current()->pagedir, i) == NULL)
+						break;
+					count += 1;
+				}
+			}
+			char i = count > 1 ? 'i' : ' ';
+			printf("Ana are %d cartof%c\n", count, i);
+			f->eax = count;
+			return;
 	}
-
 
 	thread_exit ();
 }

@@ -183,10 +183,10 @@ inumber (int fd)
   return syscall1 (SYS_INUMBER, fd);
 }
 
-
-int
-syscall_test (int fd) 
-{
-  return syscall1 (666, fd);
+int get_process_page_no(){
+  return syscall0(69);
 }
 
+int get_process_stack_size(){
+  return syscall0(70);
+}
