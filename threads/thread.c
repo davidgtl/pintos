@@ -184,6 +184,15 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
+  for(int i=0;i<128;i++)
+  {
+    if(thread_current()->children_tids[i]==-1)
+    {
+      thread_current()->children_tids[i]=tid;
+      sema_init(thread_current()->child_exec_sem[i],0);                       
+      break;
+    }
+  }
   /* Prepare thread for first run by initializing its stack.
      Do this atomically so intermediate values for the 'stack' 
      member cannot be observed. */
@@ -470,6 +479,17 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
+
+  t->parent = thread_current();
+  t->file = NULL;
+
+  for(int i=0;i<128;i++)
+  {
+    t->fd[i] = NULL;
+    t->child_exec_sem[i] = NULL;
+    t->children_tids[i] = -1;
+    t->status_code[i] = -1;
+  }
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
@@ -585,3 +605,14 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+int
+find_child_index(struct thread *t, int tid)
+{
+  for(int i=0;i<128;i++)
+  {
+    if(t->children_tids[i] == tid)
+      return i;
+  }
+  return -1;
+}
