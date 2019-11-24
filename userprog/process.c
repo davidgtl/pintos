@@ -30,6 +30,7 @@ tid_t process_execute(const char *file_name)
   char *fn_copy;
   tid_t tid;
 
+  printf("args: %s\n", file_name);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page(PAL_ZERO);
@@ -40,7 +41,7 @@ tid_t process_execute(const char *file_name)
   char *token, *save_ptr;
 
   bool first = true;
-  int i = 0;
+  int i = 1;
 
   for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
        token = strtok_r(NULL, " ", &save_ptr))
@@ -57,6 +58,8 @@ tid_t process_execute(const char *file_name)
   }
 
   //strlcpy(fn_copy);
+
+  //printf("fn_copy: %s\n", fn_copy);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create(file_name, PRI_DEFAULT, start_process, fn_copy);
@@ -84,44 +87,60 @@ start_process(void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load(file_name, &if_.eip, &if_.esp);
 
+  void *esp = if_.esp;
+  void *asta = if_.esp;
+
+  char *argv[32];
+  int argc=0;
+
+  /*for (int i = PGSIZE - (PGSIZE / 32); i >= 0; i -= PGSIZE / 32)
+  {
+    if (file_name[i] != 0)
+    {
+      int len = strlen(&file_name[i]);
+      len++;
+      //len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
+      esp-=len;
+      strlcpy(esp,&file_name[i],len);
+      argv[argc]=esp;
+      argc++;
+    }
+  }
+  int len = asta - esp;
+  //len = (len / 4 + (len % 4) != 0 ? 1 : 0) * 4;
+  esp -= 4-len % 4;
   /* If load failed, quit. */
   palloc_free_page(file_name);
   if (!success)
     thread_exit();
 
-  void *esp = if_.esp;
-  char *argv[32];
-  int argc=0;
 
-  for (int i = PGSIZE - (PGSIZE / 32); i >= 0; i -= PGSIZE / 32)
-  {
-    if (file_name[i] != 0)
-    {
-      int len = strlen(file_name[i]);
-      len++;
-      len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
-      esp-=len;
-      strlcpy(esp,file_name[i],len);
-      argv[argc]=esp;
-      argc++;
-    }
-  }
 
-  esp-=4;
-
+  /*esp-=4;
+  *((int *)esp) = 0;
+  
   for(int i=0;i<argc;i++)
   {
     esp-=4;
-    *(char *)esp = argv[i];
+    *(char **)esp = argv[i];
   }
 
   esp-=4;
-  *(char *)esp = esp+4;
+  *(char ***)esp = (char**)(esp+4);
 
   esp-=4;
-  *(char *)esp = argc;
+  *(int *)esp = argc;
 
-  esp -=4;
+  printf( "Address of esp: %p\n", ( void * )esp);
+
+
+  esp-=4;
+  *(int *)esp = 0;
+
+
+  hex_dump(0,esp, asta-esp, true);*/
+
+  printf("process: %d pagesize: %d arg: %d\n", PGSIZE-(int)esp, PGSIZE, *(int *)(esp+4));
 
   int child_index = find_child_index(thread_current()->parent, thread_current()->tid);
 
@@ -380,13 +399,14 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   *eip = (void (*)(void))ehdr.e_entry;
 
   success = true;
+  file_deny_write(file);
 
 done:
   /* We arrive here whether the load is successful or not. */
   //file_close(file);
   thread_current()->file = file;
-  file_deny_write(file);
   return success;
+  
 }
 
 /* load() helpers. */
@@ -512,7 +532,10 @@ setup_stack(void **esp)
     if (success)
     {
       // UTCN
+      
       *esp = PHYS_BASE - 12;
+      *(((int*)(*esp))+4) = 2;
+      *(((int*)(*esp))+8) = 7;
       //original
       //*esp = PHYS_BASE;
     }

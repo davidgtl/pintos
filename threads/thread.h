@@ -92,10 +92,10 @@ struct thread
 
     struct thread *parent;              /* */
     struct file *file;                 /*  Closing  process  file  when  master  thread  dies */
-    struct file *fd [128];             /* File  descriptors  */
-    struct semaphore child_exec_sem[100];  /*  Process  creation synchronization  */
-    int status_code [100];             /* exit  status  code */
-    int children_tids [100];           /*  Chrildren  threads  ids */
+    struct file *fd [30];             /* File  descriptors  */
+    struct semaphore child_exec_sem[50];  /*  Process  creation synchronization  */
+    int status_code [50];             /* exit  status  code */
+    int children_tids [50];           /*  Chrildren  threads  ids */
 
 
     struct list_elem allelem;           /* List element for all threads list. */

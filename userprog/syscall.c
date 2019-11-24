@@ -49,6 +49,8 @@ syscall_handler(struct intr_frame *f UNUSED)
   char c;
   char *str;
 
+  //printf("syscall-no: %d\n", syscall_no);
+
   switch (syscall_no)
   {
   case SYS_EXEC:
@@ -84,7 +86,20 @@ syscall_handler(struct intr_frame *f UNUSED)
         f->eax = 1;
         break;
       }
-      printf(str);
+      putbuf (str, number); 
+      f->eax = 0;
+    }
+    else if (fd == 2)
+    {
+      str = ((char **)f->esp)[2];
+      number = ((int *)f->esp)[3];
+      if(!validate_string(str,number))
+      {
+        f->eax = 1;
+        break;
+      }
+      putbuf (str, number); 
+      f->eax = 0;
     }
     else
     {
@@ -96,11 +111,10 @@ syscall_handler(struct intr_frame *f UNUSED)
         break;
       }
       file_write(thread_current()->fd[fd], str, number);
+      f->eax = 0;
     }
-    
-    f->eax = 0;
     break;
   }
-
-  thread_exit();
+ 
+  return;
 }

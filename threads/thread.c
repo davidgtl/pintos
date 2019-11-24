@@ -184,7 +184,7 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
-  for(int i=0;i<100;i++)
+  for(int i=0;i<50;i++)
   {
     if(thread_current()->children_tids[i]==-1)
     {
@@ -484,11 +484,15 @@ init_thread (struct thread *t, const char *name, int priority)
   t->parent = running_thread();
   t->file = NULL;
 
-  for(int i=0;i<100;i++)
+  for(int i=0;i<50;i++)
   {
-    t->fd[i] = NULL;
     t->children_tids[i] = -1;
     t->status_code[i] = -1;
+  }
+
+  for(int i=0;i<30;i++)
+  {
+    t->fd[i] = NULL;
   }
 }
 
@@ -604,8 +608,6 @@ allocate_tid (void)
     //printf("%s %s\n", tid_lock.holder->name, running_thread()->name);
   }
   
- 
-
   lock_acquire (&tid_lock);
   tid = next_tid++;
   lock_release (&tid_lock);
@@ -620,7 +622,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 int
 find_child_index(struct thread *t, int tid)
 {
-  for(int i=0;i<100;i++)
+  for(int i=0;i<50;i++)
   {
     if(t->children_tids[i] == tid)
       return i;
