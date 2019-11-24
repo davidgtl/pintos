@@ -8,6 +8,8 @@
 #include "filesys/file.h"
 #include "userprog/process.h"
 #include "userprog/pagedir.h"
+#include "filesys/filesys.h"
+#include "filesys/file.h"
 
 static void syscall_handler(struct intr_frame *);
 
@@ -43,11 +45,12 @@ syscall_handler(struct intr_frame *f UNUSED)
   }
 
   int syscall_no = ((int *)f->esp)[0];
-  int ok;
+  bool ok;
   int number;
   int fd;
   char c;
   char *str;
+  int32_t size;
 
   //printf("syscall-no: %d\n", syscall_no);
 
@@ -55,7 +58,7 @@ syscall_handler(struct intr_frame *f UNUSED)
   {
   case SYS_EXEC:
     str = ((char **)f->esp)[1];
-    if(!validate_string(str,PGSIZE))
+    if (!validate_string(str, PGSIZE))
     {
       f->eax = 1;
       break;
@@ -72,7 +75,7 @@ syscall_handler(struct intr_frame *f UNUSED)
     printf("%s: exit(%d)\n", thread_current()->name, number);
     process_exit(number);
     break;
-  case SYS_WRITE:
+  /*case SYS_WRITE:
     fd = ((int *)f->esp)[1];
     if (fd == 0)
     {
@@ -83,31 +86,31 @@ syscall_handler(struct intr_frame *f UNUSED)
     {
       str = ((char **)f->esp)[2];
       number = ((int *)f->esp)[3];
-      if(!validate_string(str,number))
+      if (!validate_string(str, number))
       {
         f->eax = 1;
         break;
       }
-      putbuf (str, number); 
+      putbuf(str, number);
       f->eax = 0;
     }
     else if (fd == 2)
     {
       str = ((char **)f->esp)[2];
       number = ((int *)f->esp)[3];
-      if(!validate_string(str,number))
+      if (!validate_string(str, number))
       {
         f->eax = 1;
         break;
       }
-      putbuf (str, number); 
+      putbuf(str, number);
       f->eax = 0;
     }
     else
     {
       str = ((char **)f->esp)[2];
       number = ((int *)f->esp)[3];
-      if(!validate_string(str,number) && thread_current()->fd[fd]==NULL)
+      if (!validate_string(str, number) && thread_current()->fd[fd] == NULL)
       {
         f->eax = 1;
         break;
@@ -115,8 +118,122 @@ syscall_handler(struct intr_frame *f UNUSED)
       file_write(thread_current()->fd[fd], str, number);
       f->eax = 0;
     }
+    break;*/
+  case SYS_WRITE:
+    number = ((int *)f->esp)[1];
+    str = ((char**)f->esp)[2];
+    size = ((int32_t *)f->esp)[3];
+    if(!validate_string(str,size) || (number >=30 || number <= -1))
+    {
+      f->eax = -1;
+      break;
+    }
+    f->eax = file_write (thread_current()->fd[number], str, size);
     break;
+  case SYS_READ:
+    number = ((int *)f->esp)[1];
+    str = ((char**)f->esp)[2];
+    size = ((int32_t *)f->esp)[3];
+    if(!validate_string(str,size) || (number >=30 || number <= -1))
+    {
+      f->eax = -1;
+      break;
+    }
+    f->eax = file_read (thread_current()->fd[number], str, size);
+    break;
+  case SYS_OPEN:
+    str = ((char **)f->esp)[1];
+    if (!validate_string(str, PGSIZE))
+    {
+      f->eax = 1;
+      break;
+    }
+    struct file *fisier = filesys_open(str);
+    for(int i=0;i<30;i++)
+    {
+      if(thread_current()->fd[i]==NULL)
+      {
+        thread_current()->fd[i] = fisier;
+        f->eax = i;
+      }
+    }
+    f->eax = -1;
+    break;
+  case SYS_CREATE:
+    str = ((char **)f->esp)[1];
+    if (!validate_string(str, PGSIZE))
+    {
+      f->eax = 1;
+      break;
+    }
+    size = ((int32_t *)f->esp)[2];
+    ok = filesys_create(str,size);
+    if(ok)
+    {
+      f->eax = 0;
+    }
+    else
+    {
+      f->eax = -1;
+    }
+    break;
+  case SYS_REMOVE:
+    str = ((char **)f->esp)[1];
+    if (!validate_string(str, PGSIZE))
+    {
+      f->eax = 1;
+      break;
+    }
+    ok = filesys_remove(str);
+    if(ok)
+    {
+      f->eax = 0;
+    }
+    else
+    {
+      f->eax = -1;
+    }
+    break;
+  case SYS_SEEK:
+    number = ((int *)f->esp)[1];
+    if (number >= 30 || number <= -1)
+    {
+      f->eax = 1;
+      break;
+    }
+    size = ((int32_t *)f->esp)[2];
+    file_seek(thread_current()->fd[number],size);
+    f->eax = 0;
+    break;
+  case SYS_FILESIZE:
+    number = ((int *)f->esp)[1];
+    if (number >= 30 || number <= -1)
+    {
+      f->eax = 1;
+      break;
+    }
+    f->eax = file_length(thread_current()->fd[number]);
+    break;
+  case SYS_TELL:
+    number = ((int *)f->esp)[1];
+    if (number >= 30 || number <= -1)
+    {
+      f->eax = 1;
+      break;
+    }
+    f->eax = file_tell(thread_current()->fd[number]);
+    break;
+  case SYS_CLOSE:
+    number = ((int *)f->esp)[1];
+    if (number >= 30 || number <= -1)
+    {
+      f->eax = 1;
+      break;
+    }
+    file_close(thread_current()->fd[number]);
+    f->eax = 0;
+    break; 
   }
- 
+
   return;
 }
