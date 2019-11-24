@@ -30,7 +30,7 @@ tid_t process_execute(const char *file_name)
   char *fn_copy;
   tid_t tid;
 
-  printf("args: %s\n", file_name);
+  //printf("args: %s\n", file_name);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page(PAL_ZERO);
@@ -173,7 +173,7 @@ start_process(void *file_name_)
 
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
-int process_wait(tid_t child_tid UNUSED)
+int process_wait(tid_t child_tid)
 {
   // UTCN
   int child_index = find_child_index(thread_current(), child_tid);
@@ -200,6 +200,9 @@ void process_exit(int status)
 
   thread_current()->parent->status_code[child_index]=status;
   sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
+  
+  file_close(thread_current()->file);
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

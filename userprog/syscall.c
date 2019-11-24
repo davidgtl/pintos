@@ -60,14 +60,16 @@ syscall_handler(struct intr_frame *f UNUSED)
       f->eax = 1;
       break;
     }
-    process_execute(str);
+    f->eax = process_execute(str);
+    
     break;
   case SYS_WAIT:
     number = ((int *)f->esp)[1];
-    process_wait(str);
+    process_wait(number);
     break;
   case SYS_EXIT:
     number = ((int *)f->esp)[1];
+    printf("%s: exit(%d)\n", thread_current()->name, number);
     process_exit(number);
     break;
   case SYS_WRITE:
