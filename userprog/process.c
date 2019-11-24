@@ -41,7 +41,7 @@ tid_t process_execute(const char *file_name)
   char *token, *save_ptr;
 
   bool first = true;
-  int i = 1;
+  int i = 0;
 
   for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
        token = strtok_r(NULL, " ", &save_ptr))
@@ -52,7 +52,7 @@ tid_t process_execute(const char *file_name)
       first = false;
     }
 
-    strlcpy(fn_copy + i * (PGSIZE / 32), save_ptr, PGSIZE / 32);
+    strlcpy(fn_copy + i * (PGSIZE / 32), token, PGSIZE / 32);
     i++;
     //printf ("'%s'\n", token);
   }
@@ -134,16 +134,16 @@ start_process(void *file_name_)
   (*esp)-=4;
   *(int *)*esp = argc;
 
-  printf( "Address of esp: %p\n", ( void * )(*esp));
+  //printf( "Address of esp: %p\n", ( void * )(*esp));
 
 
   (*esp)-=4;
   *(int *)(*esp) = 0;
 
 
-  hex_dump(0,(*esp), 12, false);
+  //hex_dump(0,(*esp), 12, false);
 
-  printf("process: %d pagesize: %d arg: %d\n", PGSIZE-(int)(*esp), PGSIZE, *(int *)((*esp)+4));
+ // printf("process: %d pagesize: %d arg: %d\n", PGSIZE-(int)(*esp), PGSIZE, *(int *)((*esp)+4));
 
   int child_index = find_child_index(thread_current()->parent, thread_current()->tid);
 
