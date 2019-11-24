@@ -56,7 +56,7 @@ tid_t process_execute(const char *file_name)
     //printf ("'%s'\n", token);
   }
 
-  strlcpy(fn_copy);
+  //strlcpy(fn_copy);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create(file_name, PRI_DEFAULT, start_process, fn_copy);
@@ -64,7 +64,7 @@ tid_t process_execute(const char *file_name)
     palloc_free_page(fn_copy);
   int child_index = find_child_index(thread_current(), tid);
   ASSERT(child_index!=-1);
-  sema_down(thread_current()->child_exec_sem[child_index]);  
+  sema_down(&(thread_current()->child_exec_sem[child_index]));  
   return tid;
 }
 
@@ -112,14 +112,14 @@ start_process(void *file_name_)
   for(int i=0;i<argc;i++)
   {
     esp-=4;
-    *esp = argv[i];
+    *(char *)esp = argv[i];
   }
 
   esp-=4;
-  *esp = esp+4;
+  *(char *)esp = esp+4;
 
   esp-=4;
-  *esp = argc;
+  *(char *)esp = argc;
 
   esp -=4;
 
@@ -127,7 +127,7 @@ start_process(void *file_name_)
 
   ASSERT(child_index!=-1);
 
-  sema_up(thread_current()->parent->child_exec_sem[child_index]);
+  sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -158,7 +158,7 @@ int process_wait(tid_t child_tid UNUSED)
 
   ASSERT(child_index!=-1);
 
-  sema_down(thread_current()->child_exec_sem[child_index]);
+  sema_down(&(thread_current()->child_exec_sem[child_index]));
 
   return child_tid;
 
@@ -177,7 +177,7 @@ void process_exit(int status)
   ASSERT(child_index!=-1);
 
   thread_current()->parent->status_code[child_index]=status;
-  sema_up(thread_current()->parent->child_exec_sem[child_index]);
+  sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;

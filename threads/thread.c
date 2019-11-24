@@ -184,12 +184,12 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
-  for(int i=0;i<128;i++)
+  for(int i=0;i<100;i++)
   {
     if(thread_current()->children_tids[i]==-1)
     {
       thread_current()->children_tids[i]=tid;
-      sema_init(thread_current()->child_exec_sem[i],0);                       
+      sema_init(&(thread_current()->child_exec_sem[i]),0);                       
       break;
     }
   }
@@ -300,7 +300,7 @@ thread_exit (void)
   ASSERT (!intr_context ());
 
 #ifdef USERPROG
-  process_exit ();
+  process_exit (0);
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
@@ -480,13 +480,13 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
   list_push_back (&all_list, &t->allelem);
 
-  t->parent = thread_current();
+  
+  t->parent = running_thread();
   t->file = NULL;
 
-  for(int i=0;i<128;i++)
+  for(int i=0;i<100;i++)
   {
     t->fd[i] = NULL;
-    t->child_exec_sem[i] = NULL;
     t->children_tids[i] = -1;
     t->status_code[i] = -1;
   }
@@ -595,6 +595,17 @@ allocate_tid (void)
   static tid_t next_tid = 1;
   tid_t tid;
 
+  if(tid_lock.holder == NULL)
+  {
+    //printf("NULL %s\n", running_thread()->name);
+  }
+  else
+  {
+    //printf("%s %s\n", tid_lock.holder->name, running_thread()->name);
+  }
+  
+ 
+
   lock_acquire (&tid_lock);
   tid = next_tid++;
   lock_release (&tid_lock);
@@ -609,7 +620,7 @@ uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 int
 find_child_index(struct thread *t, int tid)
 {
-  for(int i=0;i<128;i++)
+  for(int i=0;i<100;i++)
   {
     if(t->children_tids[i] == tid)
       return i;

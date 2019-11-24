@@ -7,6 +7,7 @@
 #include "userprog/pagedir.h"
 #include "filesys/file.h"
 #include "userprog/process.h"
+#include "userprog/pagedir.h"
 
 static void syscall_handler(struct intr_frame *);
 
@@ -17,7 +18,7 @@ void syscall_init(void)
 
 bool validate_pointer(void *p)
 {
-  return is_user_vaddr(p) && p != NULL && lookup_page(thread_current()->pagedir, p, false) != NULL;
+  return is_user_vaddr(p) && p != NULL && pagedir_get_page(thread_current()->pagedir, p) != NULL;
 }
 
 bool validate_string(char *str, int size)
