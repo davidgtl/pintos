@@ -80,6 +80,8 @@ start_process(void *file_name_)
   struct intr_frame if_;
   bool success;
 
+
+  
   /* Initialize interrupt frame and load executable. */
   memset(&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -191,6 +193,7 @@ int process_wait(tid_t child_tid)
 /* Free the current process's resources. */
 void process_exit(int status)
 {
+   printf("%s: exit(%d)\n", thread_current()->name, status);
   struct thread *cur = thread_current();
   uint32_t *pd;
 
@@ -200,6 +203,7 @@ void process_exit(int status)
 
   thread_current()->parent->status_code[child_index]=status;
   sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
+ 
   
   file_close(thread_current()->file);
 
