@@ -63,6 +63,7 @@ filesys_create (const char *name, off_t initial_size)
    otherwise.
    Fails if no file named NAME exists,
    or if an internal memory allocation fails. */
+
 struct file *
 filesys_open (const char *name)
 {
