@@ -56,7 +56,7 @@ bool validate_string(char *str, int size)
 static void
 syscall_handler(struct intr_frame *f UNUSED)
 {
-  if (f->esp > PHYS_BASE - 12 || f->esp < 0)
+  if ((f->esp > PHYS_BASE - 12 || f->esp < 0) && validate_pointer(f->esp))
   {
     process_exit(-1);
     return;
@@ -86,11 +86,10 @@ syscall_handler(struct intr_frame *f UNUSED)
     break;
   case SYS_WAIT:
     number = ((int *)f->esp)[1];
-    process_wait(number);
+    f->eax = process_wait(number);
     break;
   case SYS_EXIT:
     number = ((int *)f->esp)[1];
-   
     process_exit(number);
     f->eax = number;
     break;

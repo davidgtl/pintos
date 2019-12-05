@@ -2,6 +2,7 @@
 #include <debug.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
+#include "threads/thread.h"
 
 /* An open file. */
 struct file 
@@ -23,6 +24,7 @@ file_open (struct inode *inode)
       file->inode = inode;
       file->pos = 0;
       file->deny_write = false;
+      //printf("  open file-name: %p th-name:%s tid:%d\n", file->inode, thread_current()->name, thread_current()->tid);
       return file;
     }
   else
@@ -38,6 +40,7 @@ file_open (struct inode *inode)
 struct file *
 file_reopen (struct file *file) 
 {
+  //printf("  reopen file-name: %p th-name:%s tid:%d\n", file->inode, thread_current()->name, thread_current()->tid);
   return file_open (inode_reopen (file->inode));
 }
 
@@ -47,6 +50,7 @@ file_close (struct file *file)
 {
   if (file != NULL)
     {
+      //printf("  close file-name: %p th-name:%s tid:%d\n", file->inode, thread_current()->name, thread_current()->tid);
       file_allow_write (file);
       inode_close (file->inode);
       free (file); 

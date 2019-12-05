@@ -27,13 +27,14 @@ static bool load(const char *cmdline, void (**eip)(void), void **esp);
    thread id, or TID_ERROR if the thread cannot be created. */
 tid_t process_execute(const char *file_name)
 {
-  char *fn_copy;
+  char *fn_copy;//, *filename_COPY;
   tid_t tid;
 
   //printf("args: %s\n", file_name);
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page(PAL_ZERO);
+  //filename_COPY = palloc_get_page(PAL_ZERO);
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy(fn_copy, file_name, PGSIZE);
@@ -43,31 +44,20 @@ tid_t process_execute(const char *file_name)
   bool first = true;
   int i = 0;
 
-  for (token = strtok_r(file_name, " ", &save_ptr); token != NULL;
-       token = strtok_r(NULL, " ", &save_ptr))
-  {
-    if (first)
-    {
-      strlcpy(fn_copy, file_name, PGSIZE / 32);
-      first = false;
-    }
-
-    strlcpy(fn_copy + i * (PGSIZE / 32), token, PGSIZE / 32);
-    i++;
-    //printf ("'%s'\n", token);
-  }
-
   //strlcpy(fn_copy);
 
   //printf("fn_copy: %s\n", fn_copy);
 
+  token = strtok_r(fn_copy, " ", &save_ptr);
+
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create(file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create(fn_copy, PRI_DEFAULT, start_process, fn_copy);
+  //palloc_free_page(filename_COPY);
   if (tid == TID_ERROR)
     palloc_free_page(fn_copy);
   int child_index = find_child_index(thread_current(), tid);
-  ASSERT(child_index!=-1);
-  sema_down(&(thread_current()->child_exec_sem[child_index]));  
+  ASSERT(child_index != -1);
+  sema_down(&(thread_current()->child_exec_sem[child_index]));
   return tid;
 }
 
@@ -77,79 +67,87 @@ static void
 start_process(void *file_name_)
 {
   char *file_name = file_name_;
+  char *save_ptr, *token = file_name;
   struct intr_frame if_;
   bool success;
 
+  for(save_ptr = file_name; *save_ptr != '\0'; save_ptr++);
+  save_ptr++;
 
-  
   /* Initialize interrupt frame and load executable. */
   memset(&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
+  //token = strtok_r(file_name, " ", &save_ptr);
   success = load(file_name, &if_.eip, &if_.esp);
 
   void **esp = &if_.esp;
   void **asta = &if_.esp;
- // *esp -= 12;
+  // *esp -= 12;
 
   // *((int *)(*esp+4)) = 3;
   // *((int *)(*esp+8)) = 12;
+  int lens[32];
   char *argv[32];
-  int argc=0;
+  int argc = 0;
 
-  for (int i = PGSIZE - (PGSIZE / 32); i >= 0; i -= PGSIZE / 32)
+  //argv[0] = token;
+  //lens[0] = strlen(&token) + 1;
+
+  //printf("FILENAME:%s\n",file_name);
+
+  for (; token != NULL; token = strtok_r(NULL, " ", &save_ptr))
   {
-    if (file_name[i] != 0)
-    {
-      int len = strlen(&file_name[i]);
-      len++;
-      //len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
-      (*esp)-=len;
-      strlcpy((*esp),&file_name[i],len);
-      argv[argc]=(*esp);
-      argc++;
-    }
+    lens[argc] = strlen(token) + 1;
+    argv[argc] = token;
+    //printf("backtrace: %s len: %d\n", argv[argc], lens[argc]);
+    argc++;
   }
+
+  for(int i = argc-1; i >=0; i--)
+  {
+      //len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
+      (*esp) -= lens[i];
+      strlcpy((*esp), argv[i], lens[i]);
+      argv[i] = (*esp);
+  }
+
   int len = *asta - (*esp);
   //len = (len / 4 + (len % 4) != 0 ? 1 : 0) * 4;
-  (*esp) -= 4-len % 4;
+  (*esp) -= 4 - len % 4;
   /* If load failed, quit. */
   palloc_free_page(file_name);
   if (!success)
     thread_exit();
 
-
-
-  (*esp)-=4;
+  (*esp) -= 4;
   *((int *)(*esp)) = 0;
-  
-  for(int i=0;i<argc;i++)
+
+  for (int i = argc - 1; i >= 0; i--)
   {
-    (*esp)-=4;
+    (*esp) -= 4;
     *(char **)*esp = argv[i];
   }
 
-  (*esp)-=4;
-  *(char ***)(*esp) = (char**)((*esp)+4);
+  (*esp) -= 4;
+  *(char ***)(*esp) = (char **)((*esp) + 4);
 
-  (*esp)-=4;
+  (*esp) -= 4;
   *(int *)*esp = argc;
 
   //printf( "Address of esp: %p\n", ( void * )(*esp));
 
-
-  (*esp)-=4;
+  (*esp) -= 4;
   *(int *)(*esp) = 0;
 
+  //hex_dump(0,(*esp), 0, false);
 
-  //hex_dump(0,(*esp), 12, false);
-
- // printf("process: %d pagesize: %d arg: %d\n", PGSIZE-(int)(*esp), PGSIZE, *(int *)((*esp)+4));
+  // printf("process: %d pagesize: %d arg: %d\n", PGSIZE-(int)(*esp), PGSIZE, *(int *)((*esp)+4));
 
   int child_index = find_child_index(thread_current()->parent, thread_current()->tid);
 
-  ASSERT(child_index!=-1);
+  ASSERT(child_index != -1);
 
   sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
 
@@ -180,11 +178,17 @@ int process_wait(tid_t child_tid)
   // UTCN
   int child_index = find_child_index(thread_current(), child_tid);
 
-  ASSERT(child_index!=-1);
+  ASSERT(child_index != -1);
 
   sema_down(&(thread_current()->child_exec_sem[child_index]));
 
-  return child_tid;
+  int retValue = thread_current()->status_code[child_index];
+
+  thread_current()->status_code[child_index] = -1;
+
+  printf("    Valoare : %d\n", retValue);
+
+  return retValue;///child_tid;
 
   // orifinal
   //return -1;
@@ -193,20 +197,20 @@ int process_wait(tid_t child_tid)
 /* Free the current process's resources. */
 void process_exit(int status)
 {
-   printf("%s: exit(%d)\n", thread_current()->name, status);
+  printf("%s: exit(%d)\n", thread_current()->name, status);
   struct thread *cur = thread_current();
   uint32_t *pd;
 
   int child_index = find_child_index(thread_current()->parent, thread_current()->tid);
 
-  ASSERT(child_index!=-1);
+  ASSERT(child_index != -1);
 
-  thread_current()->parent->status_code[child_index]=status;
+  thread_current()->parent->status_code[child_index] = status;
   sema_up(&(thread_current()->parent->child_exec_sem[child_index]));
- 
-  
-  file_close(thread_current()->file);
 
+  file_allow_write(thread_current()->file);
+
+  printf("Preparing to destroy\n");
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -409,14 +413,14 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   *eip = (void (*)(void))ehdr.e_entry;
 
   success = true;
-  file_deny_write(file);
+
 
 done:
   /* We arrive here whether the load is successful or not. */
-  //file_close(file);
+  file_close(file);
+  file_deny_write(file);
   thread_current()->file = file;
   return success;
-  
 }
 
 /* load() helpers. */
@@ -542,7 +546,7 @@ setup_stack(void **esp)
     if (success)
     {
       // UTCN
-      
+
       //*esp = PHYS_BASE - 12;
       //original
       *esp = PHYS_BASE;
