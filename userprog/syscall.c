@@ -232,7 +232,7 @@ else
 
       
   else
-   if (!validate_string(str, PGSIZE) )
+   if (!validate_string(str, PGSIZE/32) )
     {
       f->eax = 0;
       break;
