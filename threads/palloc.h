@@ -17,4 +17,8 @@ void *palloc_get_multiple (enum palloc_flags, size_t page_cnt);
 void palloc_free_page (void *);
 void palloc_free_multiple (void *, size_t page_cnt);
 
+// Added by Adrian Colesa - VM
+void kernel_pool_bitmap_dump();
+void user_pool_bitmap_dump();
+
 #endif /* threads/palloc.h */

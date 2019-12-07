@@ -135,37 +135,10 @@ struct integer_base
     int group;                  /* Number of digits to group with ' flag. */
   };
 
-static struct integer_base base_d = {10, "0123456789", 0, 3};
-static struct integer_base base_o = {8, "01234567", 0, 3};
-static struct integer_base base_x = {16, "0123456789abcdef", 'x', 4};
-static struct integer_base base_X = {16, "0123456789ABCDEF", 'X', 4};
-
-// BEGIN - added at UTCN (2018)
-//  due to not initializing (maybe linking problems) correctly "static const" structures (see above "static const struct integer_base base_d" and the others)
-//  we changed them in non-constants and initialized explicitely
-void init_base_constants()
-{
-	base_d.base = 10;
-	base_d.digits = "0123456789";
-	base_d.x = 0;
-	base_d.group = 3;
-
-	base_o.base = 8;
-        base_o.digits = "01234567";
-        base_o.x = 0;
-        base_o.group = 3;
-
-	base_x.base = 16;
-        base_x.digits = "0123456789abcdef";
-        base_x.x = 'x';
-        base_x.group = 4;
-
-	base_X.base = 16;
-        base_X.digits = "0123456789ABCDEF";
-        base_X.x = 'X';
-        base_X.group = 4;
-}
-// END - added at UTCN (2018)
+static const struct integer_base base_d = {10, "0123456789", 0, 3};
+static const struct integer_base base_o = {8, "01234567", 0, 3};
+static const struct integer_base base_x = {16, "0123456789abcdef", 'x', 4};
+static const struct integer_base base_X = {16, "0123456789ABCDEF", 'X', 4};
 
 static const char *parse_conversion (const char *format,
                                      struct printf_conversion *,
@@ -506,7 +479,6 @@ format_integer (uintmax_t value, bool is_signed, bool negative,
   int pad_cnt;                  /* # of pad characters to fill field width. */
   int digit_cnt;                /* # of digits output so far. */
 
-  	
   /* Determine sign character, if any.
      An unsigned conversion will never have a sign character,
      even if one of the flags requests one. */

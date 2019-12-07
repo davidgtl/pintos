@@ -112,6 +112,10 @@ pagedir_set_page (uint32_t *pd, void *upage, void *kpage, bool writable)
     {
       ASSERT ((*pte & PTE_P) == 0);
       *pte = pte_create_user (kpage, writable);
+
+      //Added by Adrian Colesa - Userprog and VM
+      printf("    Page directory entry = %d. Page table entry = %d\n", pd_no (upage), pt_no(upage));
+
       return true;
     }
   else
@@ -261,3 +265,4 @@ invalidate_pagedir (uint32_t *pd)
       pagedir_activate (pd);
     } 
 }
+

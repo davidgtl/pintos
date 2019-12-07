@@ -29,13 +29,6 @@ static struct block *block_by_role[BLOCK_ROLE_CNT];
 
 static struct block *list_elem_to_block (struct list_elem *);
 
-// BEGIN - added UTCN (Nov 6th, 2018)
-void blocks_init(void)
-{
-	list_init(&all_blocks);
-}
-// END - added UTCN (Nov 6th, 2018)
-
 /* Returns a human-readable name for the given block device
    TYPE. */
 const char *
@@ -50,15 +43,6 @@ block_type_name (enum block_type type)
       "raw",
       "foreign",
     };
-
-  // BEGIN - changed UTCN (Nov 6th, 2018)
-  block_type_names[0] = "kernel";
-  block_type_names[1] = "filesys";
-  block_type_names[2] = "scratch";
-  block_type_names[3] = "swap";
-  block_type_names[4] = "raw";
-  block_type_names[5] = "foreign";
-  // END - changed UTCN (Nov 6th, 2018)
 
   ASSERT (type < BLOCK_CNT);
   return block_type_names[type];

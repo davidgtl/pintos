@@ -51,6 +51,11 @@ palloc_init (size_t user_page_limit)
   size_t free_pages = (free_end - free_start) / PGSIZE;
   size_t user_pages = free_pages / 2;
   size_t kernel_pages;
+
+  // Added by Adrian Colesa - Userprog and VM
+  printf("Number of free pages in physical memory is %d\n", free_pages);
+  printf("At most %x pages are reserved for user processes\n", user_page_limit);
+
   if (user_pages > user_page_limit)
     user_pages = user_page_limit;
   kernel_pages = free_pages - user_pages;
@@ -59,7 +64,7 @@ palloc_init (size_t user_page_limit)
   init_pool (&kernel_pool, free_start, kernel_pages, "kernel pool");
   init_pool (&user_pool, free_start + kernel_pages * PGSIZE,
              user_pages, "user pool");
-}
+  }
 
 /* Obtains and returns a group of PAGE_CNT contiguous free pages.
    If PAL_USER is set, the pages are obtained from the user pool,
@@ -167,6 +172,11 @@ init_pool (struct pool *p, void *base, size_t page_cnt, const char *name)
   lock_init (&p->lock);
   p->used_map = bitmap_create_in_buf (page_cnt, base, bm_pages * PGSIZE);
   p->base = base + bm_pages * PGSIZE;
+
+  // Added by Adrian Colesa - VM
+  printf("\"%s\" starts at virtual kernel address 0x%x (i.e. physical address 0x%x)\n", name, p->base, vtop(p->base));
+  printf("The bitmap of \"%s\" is: \n", name);
+  bitmap_dump(p->used_map);
 }
 
 /* Returns true if PAGE was allocated from POOL,
@@ -179,4 +189,26 @@ page_from_pool (const struct pool *pool, void *page)
   size_t end_page = start_page + bitmap_size (pool->used_map);
 
   return page_no >= start_page && page_no < end_page;
+}
+
+// Added by Adrian Colesa - VM
+/*
+ * Dump the kernel pool bitmap to have an idea about the allocated pages
+ */
+void
+kernel_pool_bitmap_dump()
+{
+	printf("\nThe bitmap of \"kernel pool\" is: \n");
+	bitmap_dump(kernel_pool.used_map);
+}
+
+// Added by Adrian Colesa - VM
+/*
+ * Dump the user pool bitmap to have an idea about the allocated pages
+ */
+void
+user_pool_bitmap_dump()
+{
+	printf("\nThe bitmap of \"user pool\" is: \n");
+	bitmap_dump(user_pool.used_map);
 }
