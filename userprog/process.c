@@ -558,6 +558,20 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
   return true;
 }
 
+/* Unload Segment */
+void unload_segment(struct file * f){
+  struct hash_iterator i;
+
+  hash_first (&i, &thread_current()->supl_pt);
+  while (hash_next (&i))
+    {
+      struct supl_pte *spte = hash_entry (hash_cur (&i), struct supl_pte, he);
+      if(spte->src_file == f)
+        hash_delete (&thread_current()->supl_pt, hash_cur (&i));
+    }
+  
+}
+
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
