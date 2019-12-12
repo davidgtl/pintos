@@ -61,7 +61,8 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 	{
 		PANIC("[frame_table] Table is full.");
 		// TODO: evict a page and install a new one
-
+		uint8_t *kpage;
+		frame_evict(kpage);
 		// Added by Adrian Colesa - Userprog + VM
 		//printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
 		//printf("[load_segment] Virtual page %d (vaddr=0x%x): mapped onto the kernel virtual page %d (physical frame %d)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE);
@@ -77,6 +78,7 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 
 	frame_table[free_idx].spte = spte;
 	frame_table[free_idx].ownner_thread = thread_current();
+	frame_table[free_idx].spte->frame_entry = &frame_table[free_idx];
 
 	if (0 != (PAL_ZERO & flags))
 	{
@@ -95,6 +97,7 @@ void frame_evict(void *kernel_va)
 
 	// HINT: Compute the frame_index for the kernel_va, see frame_free
 	// HINT: struct supl_pte * spte = frame_table[frame_idx].spte;
+
 	size_t idx = ((size_t)kernel_va - (size_t)user_frames) / PGSIZE;
 	struct supl_pte *spte = frame_table[idx].spte;
 	size_t swap_idx = swap_out(kernel_va);

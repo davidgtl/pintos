@@ -534,23 +534,23 @@ bool load_segment(struct file *file, off_t ofs, uint8_t *upage,
     ofs += page_read_bytes;
     /* Get a page of memory. */
 
-      uint8_t *kpage = frame_alloc(PAL_USER, spte);
-      if (kpage == NULL)
-        return false;
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
+    uint8_t *kpage = frame_alloc(PAL_USER, spte);
+    if (kpage == NULL)
+      return false;
+    /* Load this page. */
+    if (file_read(file, kpage, page_read_bytes) != (int)page_read_bytes)
+    {
+      palloc_free_page(kpage);
+      return false;
+    }
+    memset(kpage + page_read_bytes, 0, page_zero_bytes);
 
     /* Add the page to the process's address space. */
-      if (!install_page (upage, kpage, writable))
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
+    if (!install_page(upage, kpage, writable))
+    {
+      palloc_free_page(kpage);
+      return false;
+    }
 
     /* Advance. */
     read_bytes -= page_read_bytes;
@@ -591,14 +591,14 @@ setup_stack(void **esp)
 
   struct supl_pte *spte;
   spte = malloc(sizeof(struct supl_pte));
-  spte->virt_page_addr = ((uint8_t *) PHYS_BASE) - PGSIZE;
-  spte->virt_page_no = ((unsigned int) spte->virt_page_addr)/PGSIZE;
+  spte->virt_page_addr = ((uint8_t *)PHYS_BASE) - PGSIZE;
+  spte->virt_page_no = ((unsigned int)spte->virt_page_addr) / PGSIZE;
   spte->ofs = -1;
   spte->page_read_bytes = 0;
   spte->page_zero_bytes = 0;
   spte->writable = true;
   spte->swapped_out = false;
-  hash_insert (&thread_current()->supl_pt, &spte->he);
+  hash_insert(&thread_current()->supl_pt, &spte->he);
 
   kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
   if (kpage != NULL)
@@ -740,18 +740,14 @@ bool lazy_loading_page_for_address(struct supl_pte *spte, void *upage)
   //printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
   //printf("[lazy_load_segment] Virtual page %d (vaddr=0x%x): mapped onto the kernel virtual page %d (physical frame %d)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE);
 
-  frame_evict(kpage);
+  ///   !!!!!!!!!!!   frame_evict(kpage);
 
   /* Add the page to the process's address space. */
-  /*if (!install_page (spte->virt_page_addr, kpage, spte->writable))
-       {
-#ifdef VM
-         frame_free(kpage);
-#else
-         palloc_free_page (kpage);
-#endif
-         return false;
-       }*/
+  if (!install_page(spte->virt_page_addr, kpage, spte->writable))
+  {
+    frame_free(kpage);
+    return false;
+  }
 
   return true;
 }

@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "filesys/file.h"
 #include "hash.h"
+#include "vm/frame.h"
 
 // Added by Adrian Colesa - VM
 struct supl_pte {		// an entry (element) in the supplemental page table
@@ -18,6 +19,7 @@ struct supl_pte {		// an entry (element) in the supplemental page table
 	struct file* src_file; 
 	bool        swapped_out;            // corresponds to a swapped out page
     size_t      swap_idx;               // index for swap in
+	struct frame_entry *frame_entry;
 };
 
 #endif
