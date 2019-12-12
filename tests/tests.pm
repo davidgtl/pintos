@@ -44,7 +44,7 @@ sub common_checks {
     check_for_keyword ($run, "TIMEOUT", @output);
 
     fail "\u$run didn't start up properly: no \"Pintos booting\" message\n"
-      if !grep (/Pintos booting with.*kB RAM\.\.\./, @output);
+      if !grep (/Pintos booting with.*kB RAM.*/, @output);
     fail "\u$run didn't start up properly: no \"Boot complete\" message\n"
       if !grep (/Boot complete/, @output);
     fail "\u$run didn't shut down properly: no \"Timer: # ticks\" message\n"
