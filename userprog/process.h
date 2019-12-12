@@ -16,6 +16,8 @@ bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
                           bool writable);
 struct supl_pte *page_lookup(const void *);
+bool load_page_for_address(uint8_t *upage);
+bool lazy_loading_page_for_address(	struct supl_pte *spte, void *upage);
 
 struct supl_pte {		// an entry (element) in the supplemental page table
 	uint32_t	virt_page_no; 			// the number of the virtual page (also the hash key) having info about
