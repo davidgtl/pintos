@@ -9,7 +9,13 @@ struct semaphore
   {
     unsigned value;             /* Current value. */
     struct list waiters;        /* List of waiting threads. */
+
+    /* Added by Adrian Colesa */
+    char name[16];                      /* Name (for debugging purposes). */
   };
+
+/* Added by Adrian Colesa */
+void sema_init_name (struct semaphore *, unsigned value, const char *name);
 
 void sema_init (struct semaphore *, unsigned value);
 void sema_down (struct semaphore *);
@@ -22,8 +28,15 @@ struct lock
   {
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
+
+    /* Added by Adrian Colesa */
+    char name[16];                      /* Name (for debugging purposes). */
   };
 
+/* Added by Adrian Colesa */
+void lock_init_name (struct lock *, const char *name);
+
+void lock_init (struct lock *);
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);
 bool lock_try_acquire (struct lock *);
@@ -34,7 +47,13 @@ bool lock_held_by_current_thread (const struct lock *);
 struct condition 
   {
     struct list waiters;        /* List of waiting threads. */
+
+    /* Added by Adrian Colesa */
+    char name[16];                      /* Name (for debugging purposes). */
   };
+
+/* Added by Adrian Colesa */
+void cond_init_name (struct condition *, const char *name);
 
 void cond_init (struct condition *);
 void cond_wait (struct condition *, struct lock *);

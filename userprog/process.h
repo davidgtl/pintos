@@ -2,6 +2,7 @@
 #define USERPROG_PROCESS_H
 
 #include "threads/thread.h"
+#include "vm/spte.h"
 
 #include <stdint.h>
 #include "filesys/file.h"

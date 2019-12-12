@@ -40,6 +40,8 @@ static void init_pool (struct pool *, void *base, size_t page_cnt,
                        const char *name);
 static bool page_from_pool (const struct pool *, void *page);
 
+size_t user_pages;
+size_t kernel_pages;
 /* Initializes the page allocator.  At most USER_PAGE_LIMIT
    pages are put into the user pool. */
 void
@@ -49,12 +51,11 @@ palloc_init (size_t user_page_limit)
   uint8_t *free_start = ptov (1024 * 1024);
   uint8_t *free_end = ptov (init_ram_pages * PGSIZE);
   size_t free_pages = (free_end - free_start) / PGSIZE;
-  size_t user_pages = free_pages / 2;
-  size_t kernel_pages;
 
+  user_pages = free_pages / 2;
   // Added by Adrian Colesa - Userprog and VM
   printf("Number of free pages in physical memory is %d\n", free_pages);
-  printf("At most %x pages are reserved for user processes\n", user_page_limit);
+  printf("At most 0x%x pages are reserved for user processes\n", user_page_limit);
 
   if (user_pages > user_page_limit)
     user_pages = user_page_limit;
@@ -174,9 +175,9 @@ init_pool (struct pool *p, void *base, size_t page_cnt, const char *name)
   p->base = base + bm_pages * PGSIZE;
 
   // Added by Adrian Colesa - VM
-  printf("\"%s\" starts at virtual kernel address 0x%x (i.e. physical address 0x%x)\n", name, p->base, vtop(p->base));
-  printf("The bitmap of \"%s\" is: \n", name);
-  bitmap_dump(p->used_map);
+  //printf("\"%s\" starts at virtual kernel address 0x%x (i.e. physical address 0x%x)\n", name, p->base, vtop(p->base));
+  //printf("The bitmap of \"%s\" is: \n", name);
+  //bitmap_dump(p->used_map);
 }
 
 /* Returns true if PAGE was allocated from POOL,

@@ -161,7 +161,7 @@ page_fault (struct intr_frame *f)
   // Added by Adrian Colesa - VM
   if (not_present)
 	  // Load (allocate) the page the faulty virtual address "fault_addr" belongs to
-	  if (lazy_loading_page_for_address(fault_addr))
+	  if (load_page_for_address(fault_addr))
 		  return;
 
 

@@ -48,7 +48,24 @@ sema_init (struct semaphore *sema, unsigned value)
 
   sema->value = value;
   list_init (&sema->waiters);
+
+  /* Added by Adrian Colesa */
+  strlcpy (sema->name, "sema-no-name", sizeof sema->name);
 }
+
+/* Added by Adrian Colesa */
+void
+sema_init_name (struct semaphore *sema, unsigned value, const char *name)
+{
+  ASSERT (sema != NULL);
+
+  sema->value = value;
+  list_init (&sema->waiters);
+
+  strlcpy (sema->name, name, sizeof sema->name);
+}
+
+
 
 /* Down or "P" operation on a semaphore.  Waits for SEMA's value
    to become positive and then atomically decrements it.
@@ -65,12 +82,30 @@ sema_down (struct semaphore *sema)
   ASSERT (sema != NULL);
   ASSERT (!intr_context ());
 
+  /* Added by Adrian Colesa */
+  if (strcmp(sema->name, "sema-1") == 0)
+	  printf (" [sema_down] Thread \"%s\" is TRYING TO ACQUIRE the semaphore \"%s\"\n", thread_current()->name, sema->name);
+
   old_level = intr_disable ();
   while (sema->value == 0) 
     {
-      list_push_back (&sema->waiters, &thread_current ()->elem);
+	  /* Added by Adrian Colesa */
+	  if (strcmp(sema->name, "sema-1") == 0)
+		  printf (" [sema_down] Thread \"%s\" is GOING TO BLOCK, waiting for the semaphore \"%s\"\n", thread_current()->name, sema->name);
+
+	  list_push_back (&sema->waiters, &thread_current ()->elem);
       thread_block ();
+
+      /* Added by Adrian Colesa */
+      if (strcmp(sema->name, "sema-1") == 0)
+    	  printf (" [sema_down] Thread \"%s\" has JUST UNBLOCKED and TRYING TO ACQUIRE the semaphore \"%s\"\n", thread_current()->name, sema->name);
+
     }
+
+  /* Added by Adrian Colesa */
+  if (strcmp(sema->name, "sema-1") == 0)
+	  printf (" [sema_down] Thread \"%s\" has JUST ACQUIRED the semaphore \"%s\"\n", thread_current()->name, sema->name);
+
   sema->value--;
   intr_set_level (old_level);
 }
@@ -113,9 +148,24 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
+
+  /* Added by Adrian Colesa */
+  if (strcmp(sema->name, "sema-1") == 0)
+	  printf (" [sema_up] Thread \"%s\" is RELEASING the semaphore \"%s\"\n", thread_current()->name, sema->name);
+
+  if (!list_empty (&sema->waiters)) {
+	  /* Added by Adrian Colesa */
+	  struct thread *awoken_thread=list_entry (list_front(&sema->waiters),
+              struct thread, elem);
+
     thread_unblock (list_entry (list_pop_front (&sema->waiters),
                                 struct thread, elem));
+
+    /* Added by Adrian Colesa */
+    if (strcmp(sema->name, "sema-1") == 0)
+  	  printf (" [sema_up] Thread \"%s\" is AWOKEN from the waiting queue of the semaphore \"%s\"\n", awoken_thread->name, sema->name);
+  }
+
   sema->value++;
   intr_set_level (old_level);
 }
@@ -156,7 +206,7 @@ sema_test_helper (void *sema_)
       sema_up (&sema[1]);
     }
 }
-
+
 /* Initializes LOCK.  A lock can be held by at most a single
    thread at any given time.  Our locks are not "recursive", that
    is, it is an error for the thread currently holding a lock to
@@ -178,8 +228,27 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
-  sema_init (&lock->semaphore, 1);
+
+  /* Changed by Adrian Colesa */
+  sema_init_name (&lock->semaphore, 1, "lock-no-name");
+
+  /* Added by Adrian Colesa */
+  strlcpy (lock->name, "lock-no-name", sizeof lock->name);
 }
+
+/* Added by Adrian Colesa */
+void
+lock_init_name (struct lock *lock, const char *name)
+{
+  ASSERT (lock != NULL);
+
+  lock->holder = NULL;
+  sema_init_name (&lock->semaphore, 1, name);
+
+  strlcpy (lock->name, name, sizeof lock->name);
+}
+
+
 
 /* Acquires LOCK, sleeping until it becomes available if
    necessary.  The lock must not already be held by the current
@@ -196,6 +265,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  //printf ("Thread %s is trying to acquire the lock\n", thread_current()->name);
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
 }
@@ -245,7 +315,7 @@ lock_held_by_current_thread (const struct lock *lock)
 
   return lock->holder == thread_current ();
 }
-
+
 /* One semaphore in a list. */
 struct semaphore_elem 
   {
@@ -262,7 +332,22 @@ cond_init (struct condition *cond)
   ASSERT (cond != NULL);
 
   list_init (&cond->waiters);
+
+  /* Added by Adrian Colesa */
+  strlcpy (cond->name, "cond-no-name", sizeof cond->name);
 }
+
+/* Added by Adrian Colesa */
+void
+cond_init_name (struct condition *cond, const char *name)
+{
+  ASSERT (cond != NULL);
+
+  list_init (&cond->waiters);
+
+  strlcpy (cond->name, name, sizeof cond->name);
+}
+
 
 /* Atomically releases LOCK and waits for COND to be signaled by
    some other piece of code.  After COND is signaled, LOCK is

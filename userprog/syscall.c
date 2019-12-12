@@ -1,9 +1,10 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
 #include <syscall-nr.h>
+#include "lib/string.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
-#include "threads/vaddr.h"
+#include "vm/swap.h"
 #include "userprog/pagedir.h"
 #include "filesys/file.h"
 #include "userprog/process.h"

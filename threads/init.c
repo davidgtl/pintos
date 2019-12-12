@@ -31,6 +31,8 @@
 #else
 #include "tests/threads/tests.h"
 #endif
+#include "vm/swap.h"
+#include "vm/frame.h"
 #ifdef FILESYS
 #include "devices/block.h"
 #include "devices/ide.h"
@@ -65,6 +67,8 @@ static char **parse_options (char **argv);
 static void run_actions (char **argv);
 static void usage (void);
 
+extern size_t user_pages;
+extern size_t kernel_pages;
 #ifdef FILESYS
 static void locate_block_devices (void);
 static void locate_block_device (enum block_type, const char *name);
@@ -99,6 +103,7 @@ main (void)
   palloc_init (user_page_limit);
   malloc_init ();
   paging_init ();
+  frame_table_init(user_pages-1);
 
   // Added by Adrian Colesa - VM
   kernel_pool_bitmap_dump();
@@ -129,6 +134,7 @@ main (void)
   /* Initialize file system. */
   ide_init ();
   locate_block_devices ();
+  swap_init();
   filesys_init (format_filesys);
 #endif
 
@@ -177,12 +183,12 @@ paging_init (void)
       size_t pte_idx = pt_no (vaddr);
 
       // Added by Adrian Colesa - Userprog and VM
-      if ((page>=0 && page<10) || ((page>=init_ram_pages - 10) && page<init_ram_pages)) {
-    	  printf("\nPhysical memory mapping. Physical page %d starting at physical address 0x%x is mapped on the virtual page %d starting at virtual address 0x%x", page, paddr, (unsigned int)vaddr/PGSIZE, vaddr);
-		  printf("\n                         Page directory entry = %d. Page table entry = %d", pde_idx, pte_idx);
-      } else {
-    	  printf(".");
-      }
+      //if ((page>=0 && page<10) || ((page>=init_ram_pages - 10) && page<init_ram_pages)) {
+    //	  printf("\nPhysical memory mapping. Physical page %d starting at physical address 0x%x is mapped on the virtual page %d starting at virtual address 0x%x", page, paddr, (unsigned int)vaddr/PGSIZE, vaddr);
+	//	  printf("\n                         Page directory entry = %d. Page table entry = %d", pde_idx, pte_idx);
+     // } else {
+    //	  printf(".");
+     // }
 
       bool in_kernel_text = &_start <= vaddr && vaddr < &_end_kernel_text;
 
