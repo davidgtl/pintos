@@ -21,16 +21,16 @@
 static thread_func start_process NO_RETURN;
 static bool load(const char *cmdline, void (**eip)(void), void **esp);
 
-static unsigned page_hash (const struct hash_elem *p_, void *aux UNUSED);
-static bool page_less (const struct hash_elem *a_, const struct hash_elem *b_, void *aux UNUSED);
-struct supl_pte* page_lookup (const void *address);
+static unsigned page_hash(const struct hash_elem *p_, void *aux UNUSED);
+static bool page_less(const struct hash_elem *a_, const struct hash_elem *b_, void *aux UNUSED);
+struct supl_pte *page_lookup(const void *address);
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
 tid_t process_execute(const char *file_name)
 {
-  char *fn_copy;//, *filename_COPY;
+  char *fn_copy; //, *filename_COPY;
   tid_t tid;
 
   //printf("args: %s\n", file_name);
@@ -74,7 +74,8 @@ start_process(void *file_name_)
   struct intr_frame if_;
   bool success;
 
-  for(save_ptr = file_name; *save_ptr != '\0'; save_ptr++);
+  for (save_ptr = file_name; *save_ptr != '\0'; save_ptr++)
+    ;
   save_ptr++;
 
   /* Initialize interrupt frame and load executable. */
@@ -108,12 +109,12 @@ start_process(void *file_name_)
     argc++;
   }
 
-  for(int i = argc-1; i >=0; i--)
+  for (int i = argc - 1; i >= 0; i--)
   {
-      //len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
-      (*esp) -= lens[i];
-      strlcpy((*esp), argv[i], lens[i]);
-      argv[i] = (*esp);
+    //len = (len / 4 + len % 4 != 0 ? 1 : 0) * 4;
+    (*esp) -= lens[i];
+    strlcpy((*esp), argv[i], lens[i]);
+    argv[i] = (*esp);
   }
 
   int len = *asta - (*esp);
@@ -191,7 +192,7 @@ int process_wait(tid_t child_tid)
 
   printf("    Valoare : %d\n", retValue);
 
-  return retValue;///child_tid;
+  return retValue; ///child_tid;
 
   // orifinal
   //return -1;
@@ -312,9 +313,6 @@ struct Elf32_Phdr
 
 static bool setup_stack(void **esp);
 static bool validate_segment(const struct Elf32_Phdr *, struct file *);
-static bool load_segment(struct file *file, off_t ofs, uint8_t *upage,
-                         uint32_t read_bytes, uint32_t zero_bytes,
-                         bool writable);
 
 /* Loads an ELF executable from FILE_NAME into the current thread.
    Stores the executable's entry point into *EIP
@@ -410,12 +408,12 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
 
   struct hash_iterator hash_iter;
   printf("[load] The supplemental page table contents:\n");
-  hash_first (&hash_iter, &thread_current()->supl_pt);
-  while (hash_next (&hash_iter))
+  hash_first(&hash_iter, &thread_current()->supl_pt);
+  while (hash_next(&hash_iter))
   {
-	  struct supl_pte *spte = hash_entry (hash_cur (&hash_iter), struct supl_pte, he);
-	  printf("[load] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
-	      		  spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
+    struct supl_pte *spte = hash_entry(hash_cur(&hash_iter), struct supl_pte, he);
+    printf("[load] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
+           spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
   }
   printf("\n\n[load] Setup the STACK segment\n");
   /* Set up stack. */
@@ -426,7 +424,6 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   *eip = (void (*)(void))ehdr.e_entry;
 
   success = true;
-
 
 done:
   /* We arrive here whether the load is successful or not. */
@@ -499,16 +496,16 @@ validate_segment(const struct Elf32_Phdr *phdr, struct file *file)
 
    Return true if successful, false if a memory allocation error
    or disk read error occurs. */
-static bool
+bool
 load_segment(struct file *file, off_t ofs, uint8_t *upage,
              uint32_t read_bytes, uint32_t zero_bytes, bool writable)
 {
-	// Added by Adrian Colesa - VM
-	struct supl_pte *spte;
+  // Added by Adrian Colesa - VM
+  struct supl_pte *spte;
 
-  ASSERT ((read_bytes + zero_bytes) % PGSIZE == 0);
-  ASSERT (pg_ofs (upage) == 0);
-  ASSERT (ofs % PGSIZE == 0);
+  ASSERT((read_bytes + zero_bytes) % PGSIZE == 0);
+  ASSERT(pg_ofs(upage) == 0);
+  ASSERT(ofs % PGSIZE == 0);
 
   file_seek(file, ofs);
   while (read_bytes > 0 || zero_bytes > 0)
@@ -519,24 +516,24 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
     size_t page_read_bytes = read_bytes < PGSIZE ? read_bytes : PGSIZE;
     size_t page_zero_bytes = PGSIZE - page_read_bytes;
 
-      spte = malloc(sizeof(struct supl_pte));
-      spte->virt_page_addr = upage;
-      spte->virt_page_no = (unsigned int)upage/PGSIZE;
-      spte->ofs = crt_ofs;
-      spte->page_read_bytes = page_read_bytes;
-      spte->page_zero_bytes = page_zero_bytes;
-      spte->writable = writable;
-      hash_insert (&thread_current()->supl_pt, &spte->he);
-      printf("[load_segment] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
-    		  spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
-      crt_ofs += page_read_bytes;
-      /* Get a page of memory. */
-      /*uint8_t *kpage = palloc_get_page (PAL_USER);
+    spte = malloc(sizeof(struct supl_pte));
+    spte->virt_page_addr = upage;
+    spte->virt_page_no = (unsigned int)upage / PGSIZE;
+    spte->ofs = ofs;
+    spte->page_read_bytes = page_read_bytes;
+    spte->page_zero_bytes = page_zero_bytes;
+    spte->writable = writable;
+    hash_insert(&thread_current()->supl_pt, &spte->he);
+    printf("[load_segment] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
+           spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
+    ofs += page_read_bytes;
+    /* Get a page of memory. */
+    /*uint8_t *kpage = palloc_get_page (PAL_USER);
       if (kpage == NULL)
         return false;*/
 
     /* Load this page. */
-      /*if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
+    /*if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
     {
       palloc_free_page(kpage);
       return false;
@@ -544,7 +541,7 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
       memset (kpage + page_read_bytes, 0, page_zero_bytes);*/
 
     /* Add the page to the process's address space. */
-       /* if (!install_page (upage, kpage, writable))
+    /* if (!install_page (upage, kpage, writable))
     {
       palloc_free_page(kpage);
       return false;
@@ -559,17 +556,24 @@ load_segment(struct file *file, off_t ofs, uint8_t *upage,
 }
 
 /* Unload Segment */
-void unload_segment(struct file * f){
+void unload_segment(struct file *f)
+{
   struct hash_iterator i;
+  struct thread *t = thread_current();
 
-  hash_first (&i, &thread_current()->supl_pt);
-  while (hash_next (&i))
+  hash_first(&i, &thread_current()->supl_pt);
+  while (hash_next(&i))
+  {
+    struct supl_pte *spte = hash_entry(hash_cur(&i), struct supl_pte, he);
+    if (spte->src_file == f)
     {
-      struct supl_pte *spte = hash_entry (hash_cur (&i), struct supl_pte, he);
-      if(spte->src_file == f)
-        hash_delete (&thread_current()->supl_pt, hash_cur (&i));
+      if (pagedir_is_dirty(pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->virt_page_addr))
+      {
+        file_write(spte->src_file, pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->page_read_bytes);
+      }
+      hash_delete(&thread_current()->supl_pt, hash_cur(&i));
     }
-  
+  }
 }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
@@ -619,78 +623,64 @@ install_page(void *upage, void *kpage, bool writable)
 // The following functions were taken from the Pintos manual (section A.8.5 Hash Table Example)
 /* Returns a hash value for page p. */
 static unsigned
-page_hash (const struct hash_elem *p_, void *aux UNUSED)
+page_hash(const struct hash_elem *p_, void *aux UNUSED)
 {
-	const struct supl_pte *p = hash_entry (p_, struct supl_pte, he);
-	return hash_int (p->virt_page_no);
+  const struct supl_pte *p = hash_entry(p_, struct supl_pte, he);
+  return hash_int(p->virt_page_no);
 }
 
 /* Returns true if page a precedes page b. */
 static bool
-page_less (const struct hash_elem *a_, const struct hash_elem *b_,
-void *aux UNUSED)
+page_less(const struct hash_elem *a_, const struct hash_elem *b_,
+          void *aux UNUSED)
 {
-	const struct supl_pte *a = hash_entry (a_, struct supl_pte, he);
-	const struct supl_pte *b = hash_entry (b_, struct supl_pte, he);
+  const struct supl_pte *a = hash_entry(a_, struct supl_pte, he);
+  const struct supl_pte *b = hash_entry(b_, struct supl_pte, he);
 
-	return a->virt_page_no < b->virt_page_no;
+  return a->virt_page_no < b->virt_page_no;
 }
-
 
 /*
  * Returns the supplemental page table entry, containing the given virtual address,
  * or a null pointer if no such page exists.
 */
 struct supl_pte *
-page_lookup (const void *pg_no)
+page_lookup(const void *pg_no)
 {
-	struct supl_pte spte;
-	struct hash_elem *e;
+  struct supl_pte spte;
+  struct hash_elem *e;
 
-	spte.virt_page_no = pg_no;
-	e = hash_find (&thread_current()->supl_pt, &spte.he);
+  spte.virt_page_no = pg_no;
+  e = hash_find(&thread_current()->supl_pt, &spte.he);
 
-	return e != NULL ? hash_entry (e, struct supl_pte, he) : NULL;
+  return e != NULL ? hash_entry(e, struct supl_pte, he) : NULL;
 }
-
 
 /* Allocate and load a new page from the executable */
 bool lazy_loading_page_for_address(uint8_t *upage)
 {
-	struct thread *crt = thread_current();
-	struct supl_pte *spte;
+  struct thread *crt = thread_current();
+  struct supl_pte *spte;
 
-	uint32_t pg_no = ((uint32_t) upage) / PGSIZE;
+  uint32_t pg_no = ((uint32_t)upage) / PGSIZE;
 
-	// Look for the missing page in the supplemental page table and load it into a kernle memory frame
-	// TO DO
+  spte = page_lookup(pg_no);
 
-  page_lookup(pg_no);
+  uint8_t *kpage = palloc_get_page(PAL_USER);
+  if (kpage == NULL)
+    return false;
 
-  uint8_t *kpage = palloc_get_page (PAL_USER);
-      if (kpage == NULL)
-        return false;
+  if (file_read(spte->src_file, kpage, spte->page_read_bytes) != (int)spte->page_read_bytes)
+  {
+    palloc_free_page(kpage);
+    return false;
+  }
 
-      // Added by Adrian Colesa - VM
-      printf("\n[load_segment] Virtual page %d: from offset %d in the executable file read %d bytes and zero the rest %d bytes\n", ((unsigned int) upage)/PGSIZE, file_tell(file), page_read_bytes, page_zero_bytes);
+  memset(kpage + spte->page_read_bytes, 0, spte->page_zero_bytes);
 
-      /* Load this page. */
-      if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-      memset (kpage + page_read_bytes, 0, page_zero_bytes);
-
-      // Added by Adrian Colesa - Userprog + VM
-      printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
-      printf("[load_segment] Virtual page %d (vaddr=0x%x): mapped onto the kernel virtual page %d (physical frame %d)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE);
-
-      /* Add the page to the process's address space. */
-        if (!install_page (upage, kpage, writable))
-        {
-          palloc_free_page (kpage);
-          return false; 
-        }
-
+  if (!install_page(spte->virt_page_addr, kpage, spte->writable))
+  {
+    palloc_free_page(kpage);
+    return false;
+  }
 }
