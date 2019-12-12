@@ -18,6 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "vm/frame.h"
+#include "vm/spte.h"
 
 static thread_func start_process NO_RETURN;
 static bool load(const char *cmdline, void (**eip)(void), void **esp);
@@ -74,6 +75,8 @@ start_process(void *file_name_)
   char *save_ptr, *token = file_name;
   struct intr_frame if_;
   bool success;
+
+  hash_init(&thread_current()->supl_pt, page_hash, page_less, NULL);
 
   for (save_ptr = file_name; *save_ptr != '\0'; save_ptr++)
     ;
@@ -524,16 +527,16 @@ bool load_segment(struct file *file, off_t ofs, uint8_t *upage,
     spte->page_zero_bytes = page_zero_bytes;
     spte->src_file = file;
     spte->writable = writable;
+    spte->swapped_out = false;
     hash_insert(&thread_current()->supl_pt, &spte->he);
     printf("[load_segment] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
            spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
     ofs += page_read_bytes;
     /* Get a page of memory. */
-    /*uint8_t *kpage = palloc_get_page (PAL_USER);
+
       uint8_t *kpage = frame_alloc(PAL_USER, spte);
       if (kpage == NULL)
-        return false;*/
-
+        return false;
       /* Load this page. */
       if (file_read (file, kpage, page_read_bytes) != (int) page_read_bytes)
         {
@@ -586,7 +589,18 @@ setup_stack(void **esp)
   uint8_t *kpage;
   bool success = false;
 
-  kpage = palloc_get_page(PAL_USER | PAL_ZERO);
+  struct supl_pte *spte;
+  spte = malloc(sizeof(struct supl_pte));
+  spte->virt_page_addr = ((uint8_t *) PHYS_BASE) - PGSIZE;
+  spte->virt_page_no = ((unsigned int) spte->virt_page_addr)/PGSIZE;
+  spte->ofs = -1;
+  spte->page_read_bytes = 0;
+  spte->page_zero_bytes = 0;
+  spte->writable = true;
+  spte->swapped_out = false;
+  hash_insert (&thread_current()->supl_pt, &spte->he);
+
+  kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
   if (kpage != NULL)
   {
     success = install_page(((uint8_t *)PHYS_BASE) - PGSIZE, kpage, true);
@@ -599,7 +613,7 @@ setup_stack(void **esp)
       *esp = PHYS_BASE;
     }
     else
-      palloc_free_page(kpage);
+      frame_free(kpage);
   }
   return success;
 }
