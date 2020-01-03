@@ -183,9 +183,9 @@ block_print_stats (void)
       struct block *block = block_by_role[i];
       if (block != NULL)
         {
-          printf ("%s (%s): %llu reads, %llu writes\n",
-                  block->name, block_type_name (block->type),
-                  block->read_cnt, block->write_cnt);
+          // printf ("%s (%s): %llu reads, %llu writes\n",
+          //         block->name, block_type_name (block->type),
+          //         block->read_cnt, block->write_cnt);
         }
     }
 }
@@ -213,12 +213,12 @@ block_register (const char *name, enum block_type type,
   block->read_cnt = 0;
   block->write_cnt = 0;
 
-  printf ("%s: %'"PRDSNu" sectors (", block->name, block->size);
-  print_human_readable_size ((uint64_t) block->size * BLOCK_SECTOR_SIZE);
-  printf (")");
-  if (extra_info != NULL)
-    printf (", %s", extra_info);
-  printf ("\n");
+  // printf ("%s: %'"PRDSNu" sectors (", block->name, block->size);
+  // print_human_readable_size ((uint64_t) block->size * BLOCK_SECTOR_SIZE);
+  // printf (")");
+  // if (extra_info != NULL)
+  //   printf (", %s", extra_info);
+  // printf ("\n");
 
   return block;
 }

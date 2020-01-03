@@ -46,7 +46,7 @@ pagedir_destroy (uint32_t *pd)
         	  void *page = pte_get_page (*pte);
         	  if(page >= PHYS_BASE)
         	  {
-        		  printf("[pagedir_destroy] Destroy user page 0x%X\n", page);
+        		  // printf("[pagedir_destroy] Destroy user page 0x%X\n", page);
         		  frame_free(page);
         	  }
         	  else

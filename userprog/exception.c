@@ -152,13 +152,14 @@ page_fault (struct intr_frame *f)
   /* To implement virtual memory, delete the rest of the function
      body, and replace it with code that brings in the page to
      which fault_addr refers. */
-  printf ("Page fault at %p: %s error %s page in %s context.\n",
-          fault_addr,
-          not_present ? "not present" : "rights violation",
-          write ? "writing" : "reading",
-          user ? "user" : "kernel");
+//   printf ("Page fault at %p: %s error %s page in %s context.\n",
+//           fault_addr,
+//           not_present ? "not present" : "rights violation",
+//           write ? "writing" : "reading",
+//           user ? "user" : "kernel");
 
-  // Added by Adrian Colesa - VM
+ 
+   // Added by Adrian Colesa - VM
   if (not_present)
 	  // Load (allocate) the page the faulty virtual address "fault_addr" belongs to
 	  if (load_page_for_address(fault_addr))

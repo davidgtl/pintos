@@ -19,7 +19,7 @@ static struct bitmap *free_frames_bitmap;
 void frame_table_init(size_t number_of_user_pages)
 {
 	// allocate an array of frame entries
-	printf("[frame_table] Initialize for %d frames\n", number_of_user_pages);
+	// printf("[frame_table] Initialize for %d frames\n", number_of_user_pages);
 	frame_table = malloc(number_of_user_pages * sizeof(struct frame_entry));
 	if (NULL == frame_table)
 	{
@@ -33,8 +33,8 @@ void frame_table_init(size_t number_of_user_pages)
 		PANIC("Unable to claim user space for the frame manager.");
 	}
 
-	printf("[frame_table] Claimed %d user frames\n", number_of_user_pages);
-	printf("[frame_table] Address at 0x%X\n", user_frames);
+	// printf("[frame_table] Claimed %d user frames\n", number_of_user_pages);
+	// printf("[frame_table] Address at 0x%X\n", user_frames);
 
 	// initialize a bitmap to represent the free frames
 	free_frames_bitmap = bitmap_create(number_of_user_pages);
@@ -62,7 +62,10 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 		PANIC("[frame_table] Table is full.");
 		// TODO: evict a page and install a new one
 		uint8_t *kpage;
+
+		
 		frame_evict(kpage);
+		
 		// Added by Adrian Colesa - Userprog + VM
 		//printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
 		//printf("[load_segment] Virtual page %d (vaddr=0x%x): mapped onto the kernel virtual page %d (physical frame %d)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE);
@@ -74,7 +77,7 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 			return false;
 		}*/
 	}
-	printf("[frame_table] Allocated frame with index = %d\n", free_idx);
+	// printf("[frame_table] Allocated frame with index = %d\n", free_idx);
 
 	frame_table[free_idx].spte = spte;
 	frame_table[free_idx].ownner_thread = thread_current();
@@ -132,6 +135,6 @@ void frame_free(void *frame_addr)
 
 	size_t idx = ((size_t)frame_addr - (size_t)user_frames) / PGSIZE;
 
-	printf("[frame_table] Free frame with index = %d\n", idx);
+ //   printf("[frame_table] Free frame with index = %d\n", idx);
 	bitmap_set(free_frames_bitmap, idx, FRAME_FREE);
 }

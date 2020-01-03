@@ -54,8 +54,8 @@ palloc_init (size_t user_page_limit)
 
   user_pages = free_pages / 2;
   // Added by Adrian Colesa - Userprog and VM
-  printf("Number of free pages in physical memory is %d\n", free_pages);
-  printf("At most 0x%x pages are reserved for user processes\n", user_page_limit);
+  // printf("Number of free pages in physical memory is %d\n", free_pages);
+  // printf("At most 0x%x pages are reserved for user processes\n", user_page_limit);
 
   if (user_pages > user_page_limit)
     user_pages = user_page_limit;
@@ -167,7 +167,7 @@ init_pool (struct pool *p, void *base, size_t page_cnt, const char *name)
     PANIC ("Not enough memory in %s for bitmap.", name);
   page_cnt -= bm_pages;
 
-  printf ("%zu pages available in %s.\n", page_cnt, name);
+  // printf ("%zu pages available in %s.\n", page_cnt, name);
 
   /* Initialize the pool. */
   lock_init (&p->lock);
@@ -198,8 +198,8 @@ page_from_pool (const struct pool *pool, void *page)
  */
 void
 kernel_pool_bitmap_dump()
-{
-	printf("\nThe bitmap of \"kernel pool\" is: \n");
+ {
+// 	printf("\nThe bitmap of \"kernel pool\" is: \n");
 	bitmap_dump(kernel_pool.used_map);
 }
 
@@ -210,6 +210,6 @@ kernel_pool_bitmap_dump()
 void
 user_pool_bitmap_dump()
 {
-	printf("\nThe bitmap of \"user pool\" is: \n");
+	// printf("\nThe bitmap of \"user pool\" is: \n");
 	bitmap_dump(user_pool.used_map);
 }

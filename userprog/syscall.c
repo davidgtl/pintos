@@ -56,7 +56,7 @@ bool validate_string(char *str, int size)
 static void
 syscall_handler(struct intr_frame *f UNUSED)
 {
-  if ((f->esp > PHYS_BASE - 12 || f->esp < 0) && validate_pointer(f->esp))
+  if ((f->esp > PHYS_BASE - 12 || f->esp < 0) || !validate_pointer(f->esp))
   {
     process_exit(-1);
     return;
@@ -310,35 +310,54 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = 0;
     break;
   case SYS_MMAP:
+    
     fd = ((int *)f->esp)[1];
     mapping_addr = (void *)((int *)f->esp)[2];
 
+    if (!is_user_vaddr(mapping_addr) || mapping_addr ==NULL || mapping_addr == 0) 
+    {
+      f->eax=-1;
+      return;
+    }
     // Lazy mapping of the file. Similar to lazy loading the contents of an executable file.
     // Calculate the total number of virtual pages needed to map the entire file.
     // Take care that the last page could not be entirely used, so the trailing bytes should be zeroed and not written back in the file.
     // Keep track for each mapped virtual page the offset in file it must be loaded from.
     // Use supplemental page table to store this information.
     // TO DO
+  
     size = file_length(thread_current()->fd[fd]);
     for(iterator = 0; iterator < size; iterator+=PGSIZE)
     {
-      if(!page_lookup(mapping_addr+(int)iterator))
+      if(page_lookup(mapping_addr+(int)iterator))
       {
+ 
         f->eax = -1;
         return;
       }
     }
+    //  printf("SE INCARCA SEGMENTUL \n");
+    if (thread_current()->fd[fd] == -1 || thread_current()->fd[fd] == NULL)
+    {
+      f->eax = -1;
+      return;
+    }
+
+    
     load_segment(thread_current()->fd[fd], 0, (void *)mapping_addr,
                  size, PGSIZE - size % PGSIZE, true);
-
+  //printf("fd =  %d \n", fd);
     f->eax = fd;
     return;
   case SYS_MUNMAP:
     fd = ((int *)f->esp)[1];
     // Remove from the supplemental page table the elements corresponding to the unmapped pages.
     // TO DO
+    
+    if (thread_current()->fd[fd] == -1 || thread_current()->fd[fd] == NULL)
+    {
     unload_segment(thread_current()->fd[fd]);
-
+    }
     f->eax = 0;
     return;
   }

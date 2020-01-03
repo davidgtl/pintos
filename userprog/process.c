@@ -194,7 +194,7 @@ int process_wait(tid_t child_tid)
 
   thread_current()->status_code[child_index] = -1;
 
-  printf("    Valoare : %d\n", retValue);
+  // printf("    Valoare : %d\n", retValue);
 
   return retValue; ///child_tid;
 
@@ -218,7 +218,7 @@ void process_exit(int status)
 
   file_allow_write(thread_current()->file);
 
-  printf("Preparing to destroy\n");
+  // printf("Preparing to destroy\n");
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   pd = cur->pagedir;
@@ -411,15 +411,15 @@ bool load(const char *file_name, void (**eip)(void), void **esp)
   }
 
   struct hash_iterator hash_iter;
-  printf("[load] The supplemental page table contents:\n");
+  // printf("[load] The supplemental page table contents:\n");
   hash_first(&hash_iter, &thread_current()->supl_pt);
   while (hash_next(&hash_iter))
   {
     struct supl_pte *spte = hash_entry(hash_cur(&hash_iter), struct supl_pte, he);
-    printf("[load] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
-           spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
+    // printf("[load] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
+    //        spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
   }
-  printf("\n\n[load] Setup the STACK segment\n");
+  // printf("\n\n[load] Setup the STACK segment\n");
   /* Set up stack. */
   if (!setup_stack(esp))
     goto done;
@@ -529,8 +529,8 @@ bool load_segment(struct file *file, off_t ofs, uint8_t *upage,
     spte->writable = writable;
     spte->swapped_out = false;
     hash_insert(&thread_current()->supl_pt, &spte->he);
-    printf("[load_segment] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
-           spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
+    // printf("[load_segment] spte->virt_page_addr=0x%x, spte->virt_page_no=%d, spte->ofs=%d, spte->page_read_bytes=%d, spte->page_zero_bytes=%d, spte->writable=%d\n",
+    //        spte->virt_page_addr, spte->virt_page_no, spte->ofs, spte->page_read_bytes, spte->page_zero_bytes, spte->writable);
     ofs += page_read_bytes;
     /* Get a page of memory. */
 
@@ -566,19 +566,27 @@ void unload_segment(struct file *f)
   struct hash_iterator i;
   struct thread *t = thread_current();
 
-  hash_first(&i, &thread_current()->supl_pt);
-  while (hash_next(&i))
+  if (!hash_empty(&thread_current()->supl_pt))
   {
+    hash_first(&i, &thread_current()->supl_pt);
+//  if (t->pagedir!=NULL)  
+    while (hash_next(&i))
+  {
+
+
     struct supl_pte *spte = hash_entry(hash_cur(&i), struct supl_pte, he);
     if (spte->src_file == f)
     {
-      if (pagedir_is_dirty(pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->virt_page_addr))
-      {
-        file_write(spte->src_file, pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->page_read_bytes);
-      }
-      hash_delete(&thread_current()->supl_pt, hash_cur(&i));
+  //    if(t->pagedir!=NULL)
+      // if (pagedir_is_dirty(t->pagedir, spte->virt_page_addr))
+      // {
+      //   file_write(spte->src_file, pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->page_read_bytes);
+      // }
+       hash_delete(&thread_current()->supl_pt, hash_cur(&i));
+   
+   
     }
-  }
+  }}
 }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
@@ -586,6 +594,7 @@ void unload_segment(struct file *f)
 static bool
 setup_stack(void **esp)
 {
+  
   uint8_t *kpage;
   bool success = false;
 
