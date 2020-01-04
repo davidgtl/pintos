@@ -8,6 +8,7 @@
 #include <string.h>
 #include "swap.h"
 #include "spte.h"
+#include "userprog/pagedir.h"
 
 static struct frame_entry *frame_table;
 static void *user_frames = NULL;
@@ -15,9 +16,10 @@ static void *user_frames = NULL;
 #define FRAME_FREE 0
 #define FRAME_USED 1
 static struct bitmap *free_frames_bitmap;
-
+size_t no_user_pages;
 void frame_table_init(size_t number_of_user_pages)
 {
+	no_user_pages = number_of_user_pages;
 	// allocate an array of frame entries
 	// printf("[frame_table] Initialize for %d frames\n", number_of_user_pages);
 	frame_table = malloc(number_of_user_pages * sizeof(struct frame_entry));
@@ -55,17 +57,41 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 
 	// find the first free frame;
 	size_t free_idx = 0;
-
+	printf("Allocating page %p\n", spte);
 	free_idx = bitmap_scan_and_flip(free_frames_bitmap, 0, 1, FRAME_FREE);
 	if (BITMAP_ERROR == free_idx)
 	{
-		PANIC("[frame_table] Table is full.");
+		//PANIC("I'm full!");
+		//
 		// TODO: evict a page and install a new one
 		uint8_t *kpage;
 
-		
-		frame_evict(kpage);
-		
+		struct frame_entry *e;
+
+		for (int i = no_user_pages -1 ; i >= 0; i--)
+		{
+			if (!pagedir_is_accessed(frame_table[i].ownner_thread->pagedir, frame_table[i].spte->virt_page_addr))
+			{
+				kpage = pagedir_get_page(frame_table[i].ownner_thread->pagedir, frame_table[i].spte->virt_page_addr);
+				printf("i bitmap = %d\n", i);
+				// if (kpage == NULL)
+				// {
+				// 	printf("kpage null \n");
+				// }
+				// frame_evict(kpage);
+
+				free_idx = i;
+
+				struct supl_pte *spte = frame_table[i].spte;
+				size_t swap_idx = swap_out( frame_table[i].spte->virt_page_addr);
+				spte->swapped_out = true;
+				spte->swap_idx = swap_idx;
+				bitmap_set(free_frames_bitmap, i, FRAME_USED);
+
+				break;
+			}
+		}
+
 		// Added by Adrian Colesa - Userprog + VM
 		//printf("[load_segment] The process virtual page %d starting at virtual address 0x%x will be mapped onto the kernel virtual page %d (physical frame %d) starting at kernel virtual address 0x%x (physical address 0x%x)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE, kpage, vtop(kpage));
 		//printf("[load_segment] Virtual page %d (vaddr=0x%x): mapped onto the kernel virtual page %d (physical frame %d)\n", ((unsigned int) upage)/PGSIZE, upage, (unsigned int)kpage/PGSIZE, ((unsigned int)vtop(kpage))/PGSIZE);
@@ -102,6 +128,7 @@ void frame_evict(void *kernel_va)
 	// HINT: struct supl_pte * spte = frame_table[frame_idx].spte;
 
 	size_t idx = ((size_t)kernel_va - (size_t)user_frames) / PGSIZE;
+	printf("i frame_evict = %d\n", idx);
 	struct supl_pte *spte = frame_table[idx].spte;
 	size_t swap_idx = swap_out(kernel_va);
 	spte->swapped_out = true;
@@ -135,6 +162,6 @@ void frame_free(void *frame_addr)
 
 	size_t idx = ((size_t)frame_addr - (size_t)user_frames) / PGSIZE;
 
- //   printf("[frame_table] Free frame with index = %d\n", idx);
+	//   printf("[frame_table] Free frame with index = %d\n", idx);
 	bitmap_set(free_frames_bitmap, idx, FRAME_FREE);
 }

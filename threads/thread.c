@@ -134,19 +134,6 @@ void thread_tick(void)
   else
     kernel_ticks++;
 
-if(t->pagedir != NULL)
-  if (kernel_ticks % 10 == 0 && !hash_empty(&thread_current()->supl_pt))
-  {
-    struct hash_iterator hash_iter;
-    hash_first(&hash_iter, &thread_current()->supl_pt);
-    while (hash_next(&hash_iter))
-    {
-      struct supl_pte *spte = hash_entry(hash_cur(&hash_iter), struct supl_pte, he);
-      pagedir_set_dirty(t->pagedir, spte->virt_page_addr, false);
-      pagedir_set_accessed(t->pagedir, spte->virt_page_addr, false);
-    }
-  }
-
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return();
@@ -328,6 +315,24 @@ void thread_yield(void)
   enum intr_level old_level;
 
   ASSERT(!intr_context());
+
+  //printf("%s is %ull\n", cur->name, kernel_ticks);
+  if (cur->pagedir != NULL)
+    if (kernel_ticks % 40 < 20)
+    {
+      //printf("I AM GROOT\n");
+      struct hash_iterator hash_iter;
+      hash_first(&hash_iter, &cur->supl_pt);
+      while (hash_next(&hash_iter))
+      {
+        struct supl_pte *spte = hash_entry(hash_cur(&hash_iter), struct supl_pte, he);
+        pagedir_set_dirty(cur->pagedir, spte->virt_page_addr, false);
+        pagedir_set_accessed(cur->pagedir, spte->virt_page_addr, false);
+
+        //int isa = pagedir_is_accessed(cur->pagedir, spte->virt_page_addr);
+        //printf("%p is %d\n", cur, isa);
+      }
+    }
 
   old_level = intr_disable();
   if (cur != idle_thread)
