@@ -569,24 +569,24 @@ void unload_segment(struct file *f)
   if (!hash_empty(&thread_current()->supl_pt))
   {
     hash_first(&i, &thread_current()->supl_pt);
-//  if (t->pagedir!=NULL)  
+    //  if (t->pagedir!=NULL)
     while (hash_next(&i))
-  {
-
-
-    struct supl_pte *spte = hash_entry(hash_cur(&i), struct supl_pte, he);
-    if (spte->src_file == f)
     {
-  //    if(t->pagedir!=NULL)
-      // if (pagedir_is_dirty(t->pagedir, spte->virt_page_addr))
-      // {
-      //   file_write(spte->src_file, pagedir_get_page(t->pagedir, spte->virt_page_addr), spte->page_read_bytes);
-      // }
-       hash_delete(&thread_current()->supl_pt, hash_cur(&i));
-   
-   
+
+      struct supl_pte *spte = hash_entry(hash_cur(&i), struct supl_pte, he);
+      if (spte->src_file == f)
+      {
+        if (t->pagedir != NULL)
+          /*if (pagedir_is_dirty(t->pagedir, spte->virt_page_addr))
+      {
+        file_write(spte->src_file,  spte->virt_page_addr, spte->page_read_bytes);
+      }*/
+          hash_delete(&thread_current()->supl_pt, hash_cur(&i));
+        //palloc_free_page(pagedir_get_page(t->pagedir, spte->virt_page_addr));
+        //frame_free(spte->virt_page_addr);
+      }
     }
-  }}
+  }
 }
 
 /* Create a minimal stack by mapping a zeroed page at the top of
@@ -594,7 +594,7 @@ void unload_segment(struct file *f)
 static bool
 setup_stack(void **esp)
 {
-  
+
   uint8_t *kpage;
   bool success = false;
 
@@ -692,8 +692,32 @@ bool load_page_for_address(uint8_t *upage)
 
   if (spte == NULL)
   {
-    //printf("[load_page] Needed page was not found in the supplemental page table\n");
-    return false;
+    uint8_t *kpage;
+    bool success = false;
+
+    struct supl_pte *spte;
+    spte = malloc(sizeof(struct supl_pte));
+    spte->virt_page_addr = upage;
+    spte->virt_page_no = ((unsigned int)spte->virt_page_addr) / PGSIZE;
+    spte->ofs = -1;
+    spte->page_read_bytes = 0;
+    spte->page_zero_bytes = 0;
+    spte->writable = true;
+    spte->swapped_out = false;
+    hash_insert(&thread_current()->supl_pt, &spte->he);
+
+    kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
+    if (kpage != NULL)
+    {
+      success = install_page(((uint8_t *)PHYS_BASE) - PGSIZE, kpage, true);
+      if (!success)
+        frame_free(kpage);
+    }
+    else
+    {
+      printf("[load_page] Needed page was not found in the supplemental page table\n");
+      return false;
+    }
   }
 
   //printf("[load_page] Needed page was found in the supplemental page table\n");
