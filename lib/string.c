@@ -288,6 +288,21 @@ memset (void *dst_, int value, size_t size)
   return dst_;
 }
 
+void *
+memeset (void *dst_, int value, size_t size) 
+{
+  unsigned char *dst = dst_;
+  
+  ASSERT (dst != NULL || size == 0);
+
+  for(size_t i = 0; i<size;i++)
+  {
+    dst[i] = value;
+  }
+
+  return dst_;
+}
+
 /* Returns the length of STRING. */
 size_t
 strlen (const char *string) 

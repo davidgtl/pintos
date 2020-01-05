@@ -22,6 +22,8 @@
         "stdexcept": "cpp",
         "system_error": "cpp",
         "typeinfo": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "cstdint": "cpp",
+        "cstdlib": "c"
     }
 }

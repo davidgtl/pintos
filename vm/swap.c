@@ -51,6 +51,7 @@ void swap_in(size_t bitmap_idx, void *frame_addr)
 
 	// swap in all the sectors for the current frame;
 	block_read(swap_block, bitmap_idx, frame_addr);
+	bitmap_set_multiple(swap_table, bitmap_idx, 8, SWAP_FREE);
 }
 
 /*

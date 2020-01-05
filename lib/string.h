@@ -17,6 +17,7 @@ char *strrchr (const char *, int);
 size_t strspn (const char *, const char *);
 char *strstr (const char *, const char *);
 void *memset (void *, int, size_t);
+void *memeset (void *dst_, int value, size_t size) ;
 size_t strlen (const char *);
 
 /* Extensions. */
