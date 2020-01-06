@@ -694,7 +694,7 @@ bool load_page_for_address(uint8_t *upage)
 
   if (spte == NULL)
   {
-    //return false;
+    return false;
     PANIC("null spte");
     uint8_t *kpage;
     bool success = false;
