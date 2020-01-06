@@ -686,11 +686,11 @@ bool load_page_for_address(uint8_t *upage)
   struct supl_pte *spte;
   uint32_t pg_no = ((uint32_t)upage) / PGSIZE;
 
-  printf("[load_page] Looking for page no %d (address 0x%x) in the supplemental hash table\n", pg_no, upage);
+  //printf("[load_page] Looking for page no %d (address 0x%x) in the supplemental hash table\n", pg_no, upage);
 
   spte = page_lookup(pg_no);
 
-  printf("[load_page] spte found: %p\n", spte);
+  //printf("[load_page] spte found: %p\n", spte);
   if (spte == NULL)
   {
     uint8_t *kpage;
@@ -737,7 +737,7 @@ bool load_page_for_address(uint8_t *upage)
       return false;
     }
     frame_swap_in(spte);
-    printf("[load_page] Swapped in: %p\n", spte);
+    //printf("[load_page] Swapped in: %p\n", spte);
     return true;
   }
   else
@@ -756,7 +756,7 @@ bool lazy_loading_page_for_address(struct supl_pte *spte, void *upage)
   if (kpage == NULL)
     return false;
 
-  printf("lazy loading page: %p", spte);
+  //printf("lazy loading page: %p", spte);
 
   // Establish the file offset the page must be read from
   file_seek(spte->src_file, spte->ofs);

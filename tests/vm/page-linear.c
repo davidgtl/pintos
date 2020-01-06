@@ -14,15 +14,6 @@ void test_main(void)
 {
   struct arc4 arc4;
   size_t i;
-  printf("\n\n****preinitialize\n");
-  for (i = 0; i < SIZE; i++)
-    buf[i] = 'a';
-  printf("\n\n****write finished\n");
-  for (i = 0; i < SIZE; i++)
-    if (buf[i] != 'a')
-      printf("Wrong char %c at %lu\n", buf[i], i);
-    //else
-    //  printf("OK char %c at %lu\n", buf[i], i);
 
   /* Initialize to 0x5a. */
   msg("initialize");

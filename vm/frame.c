@@ -93,7 +93,7 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 		}*/
 	}
 	// printf("[frame_table] Allocated frame with index = %d\n", free_idx);
-	printf("[frame_alloc]free_idx: %d = %p\n", free_idx, spte);
+	//printf("[frame_alloc]free_idx: %d = %p\n", free_idx, spte);
 
 	frame_table[free_idx].spte = spte;
 	frame_table[free_idx].ownner_thread = thread_current();
@@ -131,7 +131,7 @@ void frame_evict(void *kernel_va)
 	pagedir_clear_page(frame_table[idx].ownner_thread->pagedir, spte->virt_page_addr);
 	//palloc_free_page(spte->virt_page_addr);
 
-	printf("[frame_evict] idx: %lu = %p\n", idx, spte);
+	//printf("[frame_evict] idx: %lu = %p\n", idx, spte);
 
 	// swap the frame out, mark the spte as swapped out.
 	// mark the entry as free
