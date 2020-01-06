@@ -69,10 +69,10 @@ syscall_handler(struct intr_frame *f UNUSED)
   char c;
   char *str;
   int32_t size;
-  void* mapping_addr;
+  void *mapping_addr;
   int iterator;
-	int mapping_id;
-	uint32_t read_bytes, zero_bytes;
+  int mapping_id;
+  uint32_t read_bytes, zero_bytes;
 
   //printf("syscall-no: %d\n", syscall_no);
 
@@ -310,13 +310,13 @@ syscall_handler(struct intr_frame *f UNUSED)
     f->eax = 0;
     break;
   case SYS_MMAP:
-    
+
     fd = ((int *)f->esp)[1];
     mapping_addr = (void *)((int *)f->esp)[2];
 
-    if (!is_user_vaddr(mapping_addr) || mapping_addr ==NULL || mapping_addr == 0) 
+    if (!is_user_vaddr(mapping_addr) || mapping_addr == NULL || mapping_addr == 0)
     {
-      f->eax=-1;
+      f->eax = -1;
       return;
     }
     // Lazy mapping of the file. Similar to lazy loading the contents of an executable file.
@@ -325,13 +325,13 @@ syscall_handler(struct intr_frame *f UNUSED)
     // Keep track for each mapped virtual page the offset in file it must be loaded from.
     // Use supplemental page table to store this information.
     // TO DO
-  
+
     size = file_length(thread_current()->fd[fd]);
-    for(iterator = 0; iterator < size; iterator+=PGSIZE)
+    for (iterator = 0; iterator < size; iterator += PGSIZE)
     {
-      if(page_lookup(mapping_addr+(int)iterator))
+      if (page_lookup(mapping_addr + (int)iterator))
       {
- 
+
         f->eax = -1;
         return;
       }
@@ -343,21 +343,21 @@ syscall_handler(struct intr_frame *f UNUSED)
       return;
     }
 
-    
     load_segment(thread_current()->fd[fd], 0, (void *)mapping_addr,
                  size, PGSIZE - size % PGSIZE, true);
-  //printf("fd =  %d \n", fd);
+    //printf("fd =  %d \n", fd);
     f->eax = fd;
     return;
   case SYS_MUNMAP:
     fd = ((int *)f->esp)[1];
     // Remove from the supplemental page table the elements corresponding to the unmapped pages.
     // TO DO
-    
-    if (thread_current()->fd[fd] == -1 || thread_current()->fd[fd] == NULL)
+
+    if (fd != -1 && thread_current()->fd[fd] != NULL)
     {
-    unload_segment(thread_current()->fd[fd]);
+      unload_segment(thread_current()->fd[fd]);
     }
+
     f->eax = 0;
     return;
   }

@@ -205,6 +205,7 @@ int process_wait(tid_t child_tid)
 /* Free the current process's resources. */
 void process_exit(int status)
 {
+  //PANIC("hello");
   printf("%s: exit(%d)\n", thread_current()->name, status);
   struct thread *cur = thread_current();
   uint32_t *pd;
@@ -442,7 +443,7 @@ done:
 static bool install_page(void *upage, void *kpage, bool writable);
 
 /* Checks whether PHDR describes a valid, loadable segment in
-   FILE and returns true if so, false otherwise. */
+   FILE and returns true if so, false omatherwise. */
 static bool
 validate_segment(const struct Elf32_Phdr *phdr, struct file *file)
 {
@@ -576,12 +577,15 @@ void unload_segment(struct file *f)
       struct supl_pte *spte = hash_entry(hash_cur(&i), struct supl_pte, he);
       if (spte->src_file == f)
       {
-        if (t->pagedir != NULL)
-          /*if (pagedir_is_dirty(t->pagedir, spte->virt_page_addr))
+        //if (t->pagedir != NULL)
+        /*if (pagedir_is_dirty(t->pagedir, spte->virt_page_addr))
       {
         file_write(spte->src_file,  spte->virt_page_addr, spte->page_read_bytes);
       }*/
-          hash_delete(&thread_current()->supl_pt, hash_cur(&i));
+        //hash_delete(&thread_current()->supl_pt, hash_cur(&i));
+        //frame_free(frame_addr(spte->frame_entry));
+        //pagedir_clear_page(thread_current()->pagedir, spte->virt_page_addr);
+
         //palloc_free_page(pagedir_get_page(t->pagedir, spte->virt_page_addr));
         //frame_free(spte->virt_page_addr);
       }
@@ -686,13 +690,12 @@ bool load_page_for_address(uint8_t *upage)
   struct supl_pte *spte;
   uint32_t pg_no = ((uint32_t)upage) / PGSIZE;
 
-  //printf("[load_page] Looking for page no %d (address 0x%x) in the supplemental hash table\n", pg_no, upage);
-
   spte = page_lookup(pg_no);
 
-  //printf("[load_page] spte found: %p\n", spte);
   if (spte == NULL)
   {
+    //return false;
+    PANIC("null spte");
     uint8_t *kpage;
     bool success = false;
 
@@ -710,9 +713,9 @@ bool load_page_for_address(uint8_t *upage)
     kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
     if (kpage != NULL)
     {
-      success = install_page(((uint8_t *)PHYS_BASE) - PGSIZE, kpage, true);
+      success = install_page(spte->virt_page_addr, kpage, true);
       if (!success)
-        frame_free(kpage);
+        return false;
     }
     else
     {
@@ -725,7 +728,7 @@ bool load_page_for_address(uint8_t *upage)
 
   if (spte->swapped_out)
   {
-    void* kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
+    void *kpage = frame_alloc(PAL_USER | PAL_ZERO, spte);
     //printf("[load_page] Page for 0x%X was swapped out\n", upage);
     if (NULL == kpage)
     {

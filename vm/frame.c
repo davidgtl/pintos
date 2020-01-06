@@ -70,7 +70,7 @@ void *frame_alloc(enum palloc_flags flags, struct supl_pte *spte)
 		struct frame_entry *e;
 
 		size_t i = last_free_idx;
-		last_free_idx = (last_free_idx + 1) % (no_user_pages-50) + 50;
+		last_free_idx = (last_free_idx + 1) % (no_user_pages - 50) + 50;
 		//for (int i = no_user_pages - 1; i >= 0; i--)
 		{
 			//if (!pagedir_is_accessed(frame_table[i].ownner_thread->pagedir, frame_table[i].spte->virt_page_addr) || i == 58)
@@ -128,7 +128,7 @@ void frame_evict(void *kernel_va)
 	spte->swapped_out = true;
 	spte->swap_idx = swap_idx;
 	frame_free(kernel_va);
-	pagedir_clear_page(frame_table[idx].ownner_thread->pagedir, spte->virt_page_addr);
+	//pagedir_clear_page(frame_table[idx].ownner_thread->pagedir, spte->virt_page_addr);
 	//palloc_free_page(spte->virt_page_addr);
 
 	//printf("[frame_evict] idx: %lu = %p\n", idx, spte);
@@ -159,6 +159,14 @@ void frame_free(void *frame_addr)
 
 	size_t idx = ((size_t)frame_addr - (size_t)user_frames) / PGSIZE;
 
+	if (frame_table[idx].ownner_thread->pagedir != NULL && page_lookup(frame_table[idx].spte->virt_page_no) != NULL)
+		pagedir_clear_page(frame_table[idx].ownner_thread->pagedir, frame_table[idx].spte->virt_page_addr);
 	//   printf("[frame_table] Free frame with index = %d\n", idx);
 	bitmap_set(free_frames_bitmap, idx, FRAME_FREE);
+}
+
+void *frame_addr(struct frame_entry *frame_e)
+{
+	ASSERT(frame_e == &frame_table[frame_e - frame_table])
+	return (char *)user_frames + PGSIZE * (frame_e - frame_table);
 }

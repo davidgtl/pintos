@@ -17,5 +17,6 @@ void frame_free(void *frame_addr);
 
 void frame_evict( void *kernel_va);	/* the kernel mode address corresponding to the frame to be evicted */
 void * frame_swap_in(struct supl_pte* spte);
+void *frame_addr(struct frame_entry *frame_e);
 
 #endif
