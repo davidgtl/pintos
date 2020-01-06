@@ -50,7 +50,9 @@ void swap_in(size_t bitmap_idx, void *frame_addr)
 	ASSERT(bitmap_test(swap_table, bitmap_idx) == SWAP_USED);
 
 	// swap in all the sectors for the current frame;
-	block_read(swap_block, bitmap_idx, frame_addr);
+	for (size_t i = 0; i < SWAP_SECTORS_PER_PAGE; i++)
+		block_read(swap_block, bitmap_idx + i, frame_addr + i * BLOCK_SECTOR_SIZE);
+	bitmap_set_multiple(swap_table, bitmap_idx, 8, SWAP_FREE);
 }
 
 /*
@@ -67,7 +69,8 @@ size_t swap_out(void *frame_addr)
 	// find a free index in the swap table
 	free_idx = bitmap_scan_and_flip(swap_table, 0, 8, false);
 	// swap out the frame to the swap space
-	block_write(swap_block, free_idx, frame_addr);
+	for (size_t i = 0; i < SWAP_SECTORS_PER_PAGE; i++)
+		block_write(swap_block, free_idx + i, frame_addr + i * BLOCK_SECTOR_SIZE);
 	return free_idx;
 }
 
